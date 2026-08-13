@@ -1,0 +1,1260 @@
+//@version=6
+indicator('HTF Swings & FVG', 'HTF Swings & FVG', overlay = true, max_bars_back = 5000, max_lines_count = 500)
+
+type TimeframeSettings
+	bool show
+	string htf
+	color color_bull
+	color color_bear
+	color color_bull_ce
+	color color_bear_ce
+	int max_count
+
+type ZoneBox
+	line open
+	line close
+	line ce
+	linefill fill
+	label label_ce
+
+type FvgZone
+	int open_time
+	int close_time
+	float open
+	float middle
+	float close
+	bool mitigated
+	int mitigated_time
+	bool isbullish
+	ZoneBox box2
+
+type FvgStructure
+	array<FvgZone> imbalance
+	TimeframeSettings settings
+	int order = 1
+	int step = 0
+
+type ScriptHelper
+	string name = 'Helper'
+    
+// ── Inputs ─────────────────────────────────────────
+
+// ── General Settings ─────────────────────────────────────────
+generalSettings = "General"
+showKeyLevels = input.bool(true, "Show Key Levels", inline='G1', group=generalSettings)
+showOpenLines = input.bool(true, "Show Opening Prices", inline='G1', group=generalSettings)
+
+showFvgs = input.bool(true, "Show FVGs", inline='G2', group=generalSettings)
+showSwings = input.bool(true, "Show Swings", inline='G2', group=generalSettings)
+
+// ── Key Levels ─────────────────────────────────────────
+var g_KEY_LEVELS = "Key Level Settings"
+
+max_days = 1
+tf_limit = "30"
+gmt_tz = 'America/New_York' //input.string('America/New_York', "Timezone", options = ['America/New_York','GMT-12','GMT-11','GMT-10','GMT-9','GMT-8','GMT-7','GMT-6','GMT-5','GMT-4','GMT-3','GMT-2','GMT-1','GMT+0','GMT+1','GMT+2','GMT+3','GMT+4','GMT+5','GMT+6','GMT+7','GMT+8','GMT+9','GMT+10','GMT+11','GMT+12','GMT+13','GMT+14'], tooltip = "Note GMT is not adjusted to reflect Daylight Saving Time changes", group = g_KEY_LEVELS)
+lbl_size = size.tiny
+dwm_extend_candles = 13
+var tf_limit_is_equal_or_more_chart_tf = timeframe.in_seconds('') <= timeframe.in_seconds(tf_limit)
+
+kzp_style = input.string(defval = '⎯⎯⎯', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = "KZP", group = g_KEY_LEVELS)
+kzp_width = input.int(1, "Width", inline = "KZP", group = g_KEY_LEVELS)
+label_right = false
+
+use_asia = input.bool(true, "", inline = "AS1", group = g_KEY_LEVELS)
+asia = input.session("1800-0200", "Asia Session", inline = "AS1", group = g_KEY_LEVELS)
+as_color = input.color(#4a4a4a, "", inline = "AS1", group = g_KEY_LEVELS)
+
+use_london = input.bool(true, "", inline = "LO1", group = g_KEY_LEVELS)
+london = input.session("0200-0800", "London Session", inline = "LO1", group = g_KEY_LEVELS)
+lo_color = input.color(#4a4a4a, "", inline = "LO1", group = g_KEY_LEVELS)
+
+use_nyam = input.bool(true, "", inline = "NY1", group = g_KEY_LEVELS)
+nyam = input.session("0930-1730", "Session", inline = "NY1", group = g_KEY_LEVELS)
+na_color = input.color(#4a4a4a, "", inline = "NY1", group = g_KEY_LEVELS)
+
+var g_DWM_GEN = "Previous High & Low"
+dhl = input.bool(true, "Day", inline = "D1", group = g_DWM_GEN)
+d_color = input.color(#7e57c2, "", inline = "D1", group = g_DWM_GEN)
+
+whl = input.bool(true, "Week", inline = "D1", group = g_DWM_GEN)
+w_color = input.color(#7e57c2, "", inline = "D1", group = g_DWM_GEN)
+
+mhl = input.bool(true, "Month", inline = "D1", group = g_DWM_GEN)
+m_color = input.color(#7e57c2, "", inline = "D1", group = g_DWM_GEN)
+
+
+// ── FVG Settings ─────────────────────────────────────────
+fvgSettings = "FVG Settings"
+TimeframeSettings HTF_1_FVG_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_2_FVG_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_3_FVG_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_4_FVG_Settings = TimeframeSettings.new()
+
+HTF_1_FVG_Settings.show := input.bool(true, '', inline = 'htf1', group = fvgSettings)
+HTF_1_FVG_Settings.htf := input.timeframe('30', '', inline = 'htf1', group = fvgSettings)
+HTF_1_FVG_Settings.color_bull := input.color(#dbdbdb, '', inline = 'htf1', group = fvgSettings)
+HTF_1_FVG_Settings.color_bear := input.color(#dbdbdb, '', inline = 'htf1', group = fvgSettings)
+HTF_1_FVG_Settings.max_count := input.int(2, '', inline = 'htf1', group = fvgSettings)
+
+HTF_2_FVG_Settings.show := input.bool(false, '', inline = 'htf2', group = fvgSettings)
+HTF_2_FVG_Settings.htf := input.timeframe('60', '', inline = 'htf2', group = fvgSettings)
+HTF_2_FVG_Settings.color_bull := input.color(#dbdbdb, '', inline = 'htf2', group = fvgSettings)
+HTF_2_FVG_Settings.color_bear := input.color(#dbdbdb, '', inline = 'htf2', group = fvgSettings)
+HTF_2_FVG_Settings.max_count := input.int(2, '', inline = 'htf2', group = fvgSettings)
+
+HTF_3_FVG_Settings.show := input.bool(true, '', inline = 'htf3', group = fvgSettings)
+HTF_3_FVG_Settings.htf := input.timeframe('240', '', inline = 'htf3', group = fvgSettings)
+HTF_3_FVG_Settings.color_bull := input.color(#dbdbdb, '', inline = 'htf3', group = fvgSettings)
+HTF_3_FVG_Settings.color_bear := input.color(#dbdbdb, '', inline = 'htf3', group = fvgSettings)
+HTF_3_FVG_Settings.max_count := input.int(2, '', inline = 'htf3', group = fvgSettings)
+
+HTF_4_FVG_Settings.show := input.bool(true, '', inline = 'htf4', group = fvgSettings)
+HTF_4_FVG_Settings.htf := input.timeframe('D', '', inline = 'htf4', group = fvgSettings)
+HTF_4_FVG_Settings.color_bull := input.color(#dbdbdb, '', inline = 'htf4', group = fvgSettings)
+HTF_4_FVG_Settings.color_bear := input.color(#dbdbdb, '', inline = 'htf4', group = fvgSettings)
+HTF_4_FVG_Settings.max_count := input.int(2, '', inline = 'htf4', group = fvgSettings)
+
+
+extendby = 'Always' //input.string('Always', 'Extend FVGs', options = ['Always', 'When in Range'])
+extend = input.int(0, 'Distance from current candle', minval = 0, group = fvgSettings)
+buffer = 0 //input.int(2, 'Spacing between timeframes', minval = 0)
+fill_percent = 70 //input.int(70, '', options = [95, 90, 85, 80, 75, 70, 65, 60, 55, 50], inline = 'fill')
+
+CE_show = input.bool(false, 'C.E.     ', inline = '3', group = fvgSettings)
+CE_color = input.color(color.new(color.gray, 70), '', inline = '3', group = fvgSettings)
+CE_style = input.string('····', '', options = ['⎯⎯⎯', '----', '····'], inline = '3', group = fvgSettings)
+
+mitigated_show = input.bool(false, 'Mitigated FVG', inline = '2', group = fvgSettings)
+mitigated_color_bull = input.color(#faa1a4, '', inline = '2', group = fvgSettings)
+mitigated_color_bear = input.color(#faa1a4, '', inline = '2', group = fvgSettings)
+mitigated_type = input.string('Wick filled', 'when', options = ['None', 'Touched', 'Wick filled', 'Body filled', 'Wick filled half', 'Body filled half'], inline = '2', group = fvgSettings)
+mitigated_extend = 5 //input.int(5, 'Extend mitigated lines', minval = 0)
+
+
+fvg_label_color = color.new(color.black, 10) //input.color(color.new(color.black, 10), '', group = Settings_Labels, inline = 'label')
+
+useProximity = false //input.bool(false, 'Use Proximity to show to show/hide FVGs', group = Settings_advanced)
+proximity = 11 - 9 //input.int(9, 'Proximity factor based on daily range', options = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], group = Settings_advanced)
+labelfactor = 10 //input.int(10, 'Combine labels factor for visibility', options = [20, 15, 10, 6, 5, 4, 3], group = Settings_advanced) / 10
+atrfactor = 10 //input.int(10, 'Range should be within X candles', minval = 1, group = Settings_advanced)
+
+
+
+// ── Swing Settings ─────────────────────────────────────────
+swingSettings = "Swing Settings"
+TimeframeSettings HTF_1_Swing_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_2_Swing_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_3_Swing_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_4_Swing_Settings = TimeframeSettings.new()
+
+swingLineStyle = input.string(defval = '⎯⎯⎯', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = 'sl1', group = swingSettings)
+swingLineWidth = input.int(1, "Width", inline = "sl1", group = swingSettings)
+
+HTF_1_Swing_Settings.show := input.bool(true, '', inline = 'htf1', group = swingSettings)
+HTF_1_Swing_Settings.htf := input.timeframe('30', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf1', group = swingSettings)
+HTF_1_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf1', group = swingSettings)
+HTF_1_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf1', group = swingSettings)
+HTF_1_Swing_Settings.max_count := input.int(3, '', inline = 'htf1', group = swingSettings)
+
+HTF_2_Swing_Settings.show := input.bool(false, '', inline = 'htf2', group = swingSettings)
+HTF_2_Swing_Settings.htf := input.timeframe('60', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf2', group = swingSettings)
+HTF_2_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf2', group = swingSettings)
+HTF_2_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf2', group = swingSettings)
+HTF_2_Swing_Settings.max_count := input.int(3, '', inline = 'htf2', group = swingSettings)
+
+HTF_3_Swing_Settings.show := input.bool(true, '', inline = 'htf3', group = swingSettings)
+HTF_3_Swing_Settings.htf := input.timeframe('240', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf3', group = swingSettings)
+HTF_3_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf3', group = swingSettings)
+HTF_3_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf3', group = swingSettings)
+HTF_3_Swing_Settings.max_count := input.int(2, '', inline = 'htf3', group = swingSettings)
+
+HTF_4_Swing_Settings.show := input.bool(false, '', inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.htf := input.timeframe('D', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.max_count := input.int(1, '', inline = 'htf4', group = swingSettings)
+
+swingLength = input.int(2, 'Swing Strength (Bars Left = Right)', minval = 0, group = swingSettings)
+
+showOldSwing = input.bool(true, "", inline='os', group = swingSettings)
+oldSwingCount = input.int(2, "Mitigated Swing", inline='os', minval = 0, group = swingSettings)
+
+showSwingLabel = input.bool(true, '', inline = 'slbl', group = swingSettings)
+swingLabelSizeInput = input.string('Tiny', 'Label', options = ['Tiny', 'Small', 'Normal', 'Large'], inline = 'slbl', group = swingSettings)
+swingLabelSize = switch swingLabelSizeInput
+    'Tiny' => size.tiny
+    'Small' => size.small
+    'Normal' => size.normal
+    'Large' => size.large
+labelOffset = 3
+
+var g_OPEN = "Opening Prices"
+hz_style = input.string(defval = '····', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = "H0", tooltip = "Applies to all opening price lines below", group = g_OPEN)
+hz_width = input.int(1, "", inline = "H0", group = g_OPEN)
+
+use_h1 = input.bool(true, "", inline = "H1", group = g_OPEN)
+h1_text = input.string("00:00", "Label", inline = "H1", group = g_OPEN)
+h1 = input.session("0000-0001", "Time", inline = "H1", group = g_OPEN)
+h1_color = input.color(color.black, "", inline = "H1", group = g_OPEN)
+
+use_h2 = input.bool(true, "", inline = "H2", group = g_OPEN)
+h2_text = input.string("08:30", "Label", inline = "H2", group = g_OPEN)
+h2 = input.session("0830-0831", "Time", inline = "H2", group = g_OPEN)
+h2_color = input.color(color.black, "", inline = "H2", group = g_OPEN)
+
+use_h3 = input.bool(true, "", inline = "H3", group = g_OPEN)
+h3_text = input.string("9:30", "Label", inline = "H3", group = g_OPEN)
+h3 = input.session("0930-0931", "Time", inline = "H3", group = g_OPEN)
+h3_color = input.color(color.black, "", inline = "H3", group = g_OPEN)
+
+use_h4 = input.bool(true, "", inline = "H4", group = g_OPEN)
+h4_text = input.string("10:00", "Label", inline = "H4", group = g_OPEN)
+h4 = input.session("1000-1001", "Time", inline = "H4", group = g_OPEN)
+h4_color = input.color(color.black, "", inline = "H4", group = g_OPEN)
+
+
+// ── Alert Settings ─────────────────────────────────────────
+alertSettings = "Alert Settings"
+
+enableAlerts      = input.bool(true, "Enable Alerts", group=alertSettings)
+alertSwingsBreak  = input.bool(true, "Alert Swings Break", group=alertSettings)
+alertKeyLevelBreak = input.bool(true, "Alert Key Levels Break", group=alertSettings)
+
+alertAsia       = input.bool(false, "", group=alertSettings, inline="asia")
+asiaSession     = input.session("1900-0000", "Asia", group=alertSettings, inline="asia")
+
+alertLondon     = input.bool(true, "", group=alertSettings, inline="london")
+londonSession   = input.session("0200-0500", "London", group=alertSettings, inline="london")
+
+alertNewYork    = input.bool(true, "", group=alertSettings, inline="newyork")
+newYorkSession  = input.session("0830-1100", "New York", group=alertSettings, inline="newyork")
+
+// ── FVG Variables ─────────────────────────────────────────
+color color_transparent = #ffffff00
+
+ScriptHelper helper = ScriptHelper.new()
+
+var FvgStructure FVG_1 = FvgStructure.new()
+var FvgStructure FVG_2 = FvgStructure.new()
+var FvgStructure FVG_3 = FvgStructure.new()
+var FvgStructure FVG_4 = FvgStructure.new()
+
+var array<FvgZone> FVGs_1 = array.new<FvgZone>()
+var array<FvgZone> FVGs_2 = array.new<FvgZone>()
+var array<FvgZone> FVGs_3 = array.new<FvgZone>()
+var array<FvgZone> FVGs_4 = array.new<FvgZone>()
+
+FVG_1.imbalance := FVGs_1
+FVG_1.settings := HTF_1_FVG_Settings
+FVG_2.imbalance := FVGs_2
+FVG_2.settings := HTF_2_FVG_Settings
+FVG_3.imbalance := FVGs_3
+FVG_3.settings := HTF_3_FVG_Settings
+FVG_4.imbalance := FVGs_4
+FVG_4.settings := HTF_4_FVG_Settings
+
+//Used internally for padding
+
+var float daily = 0
+var float monthly = 0
+
+int cspacer = timeframe.in_seconds() * 1000
+
+var array<float> median = array.new_float()
+length = 500
+median.unshift(high - low)
+if median.size() > length
+    median.pop()
+float spacing = ta.sma(ta.sma(median.median(), length), length) * labelfactor
+
+// ── FVG Methods ─────────────────────────────────────────
+method LineStyle(ScriptHelper helper, string style) =>
+    helper.name := style
+
+    out = switch style
+        '----' => line.style_dashed
+        '····' => line.style_dotted
+        => line.style_solid
+
+    out
+
+method Text(ScriptHelper helper, string htf, string direction, string level, bool truncate) =>
+    helper.name := htf
+
+    string formatted = ''
+
+    seconds = timeframe.in_seconds(htf)
+    if seconds < 60
+        formatted := str.tostring(seconds) + 's'
+        formatted
+    else if seconds / 60 < 60
+        formatted := str.tostring(seconds / 60) + 'm'
+        formatted
+    else if seconds / 60 / 60 < 24
+        formatted := str.tostring(seconds / 60 / 60) + 'H'
+        formatted
+    else
+        formatted := htf
+        formatted
+
+    formatted + ' ' + direction + 'fvg'
+
+method Validtimeframe(ScriptHelper helper, tf) =>
+    bool valid = true
+
+    helper.name := tf
+    n1 = timeframe.in_seconds()
+    n2 = timeframe.in_seconds(tf)
+
+    if n1 > n2
+        valid := false
+    valid
+
+method ProximityRange(ScriptHelper helper, tf) =>
+    helper.name := tf
+    float range_high = 0
+    float range_low = 0
+    if timeframe.isseconds or timeframe.isminutes
+        range_high := close + daily / proximity
+        range_low := close - daily / proximity
+        range_low
+    if timeframe.isdaily
+        range_high := close + monthly * 3
+        range_low := close - monthly * 3
+        range_low
+    if timeframe.isweekly
+        range_high := close + monthly * 12
+        range_low := close - monthly * 12
+        range_low
+    [range_low, range_high]
+
+method HTFEnabled(ScriptHelper helper) =>
+    helper.name := 'HTFEnabled'
+    int enabled = 0
+    enabled := enabled + (FVG_1.settings.show and helper.Validtimeframe(FVG_1.settings.htf) ? 1 : 0)
+    enabled := enabled + (FVG_2.settings.show and helper.Validtimeframe(FVG_2.settings.htf) ? 1 : 0)
+    enabled := enabled + (FVG_3.settings.show and helper.Validtimeframe(FVG_3.settings.htf) ? 1 : 0)
+    enabled := enabled + (FVG_4.settings.show and helper.Validtimeframe(FVG_4.settings.htf) ? 1 : 0)
+
+find_low_bar_time(float price, int start, int default, bool inverse) =>
+    int loc = default
+    int x = inverse ? 0 : (time - start) / cspacer
+    int y = inverse ? (time - start) / cspacer : 0
+
+    if x < 5000 and y < 5000
+        for i = x to y by 1
+            if low[i] == price
+                loc := time[i]
+                break
+    loc
+
+find_high_bar_time(float price, int start, int default, bool inverse) =>
+    int loc = default
+    int x = inverse ? 0 : (time - start) / cspacer
+    int y = inverse ? (time - start) / cspacer : 0
+
+    if x < 5000 and y < 5000
+        for i = x to y by 1
+            if high[i] == price
+                loc := time[i]
+                break
+    loc
+
+refresh_visible_timeframes() =>
+    int step = 1
+
+    FVG_1.step := 1
+    for t in FVG_1.imbalance
+        if not na(t.box2)
+            FVG_1.step := step
+            step := step + 1
+            break
+
+    FVG_2.step := 1
+    for t in FVG_2.imbalance
+        if not na(t.box2)
+            FVG_2.step := step
+            step := step + 1
+            break
+
+    FVG_3.step := 1
+    for t in FVG_3.imbalance
+        if not na(t.box2)
+            FVG_3.step := step
+            step := step + 1
+            break
+
+    FVG_4.step := 1
+    for t in FVG_4.imbalance
+        if not na(t.box2)
+            FVG_4.step := step
+            step := step + 1
+            break
+
+method clear(FvgZone imb) =>
+    if not na(imb.box2)
+        line.delete(imb.box2.open)
+        line.delete(imb.box2.close)
+        line.delete(imb.box2.ce)
+        linefill.delete(imb.box2.fill)
+        label.delete(imb.box2.label_ce)
+        imb.box2 := na
+        imb.box2
+
+
+// AddZone is used to display and manage FVG-related boxes
+method AddZone(FvgStructure IS, FvgZone imb, int step) =>
+    bool visible = true
+    if IS.settings.show
+        int v_buffer = time + (time - time[1]) * (extend + 1 + buffer * (step - 1))
+
+        if imb.mitigated and not mitigated_show
+            if not na(imb.box2)
+                visible := false
+                visible
+            imb.clear()
+
+        if na(imb.box2)
+            color c = imb.isbullish ? IS.settings.color_bull : IS.settings.color_bear
+
+            imb.box2 := ZoneBox.new()
+            imb.box2.open := line.new(imb.open_time, imb.open, v_buffer, imb.open, xloc = xloc.bar_time, style = line.style_dotted, color = color_transparent, width = 1)
+            imb.box2.close := line.new(imb.close_time, imb.close, v_buffer, imb.close, xloc = xloc.bar_time, style = line.style_dotted, color = color_transparent, width = 1)
+            
+            imb.box2.fill := linefill.new(imb.box2.open, imb.box2.close, color.new(c, fill_percent))
+            imb.box2.fill
+
+            if CE_show
+                imb.box2.ce := line.new((imb.open_time + imb.close_time) / 2, imb.middle, v_buffer, imb.middle, xloc = xloc.bar_time, style = helper.LineStyle(CE_style), color = CE_color, width = 1)
+                imb.box2.ce
+            if math.abs(imb.open - imb.close) >= spacing
+                imb.box2.label_ce := label.new(v_buffer, imb.middle, text = helper.Text(IS.settings.htf, imb.isbullish ? '+' : '-', 'ce', false), xloc = xloc.bar_time, textcolor = fvg_label_color, style = label.style_label_left, color = color_transparent, size = size.tiny)
+                imb.box2.label_ce
+            else
+                imb.box2.label_ce := label.new(v_buffer, imb.middle, text = helper.Text(IS.settings.htf, imb.isbullish ? '+' : '-', '', false), xloc = xloc.bar_time, textcolor = fvg_label_color, style = label.style_label_left, color = color_transparent, size = size.tiny)
+                imb.box2.label_ce
+    visible
+
+method updateZone(FvgStructure IS) =>
+    if barstate.islast
+        refresh_visible_timeframes()
+        int level = IS.step
+        for imb in IS.imbalance
+            if not na(imb.box2)
+                int v_buffer = 0
+                if imb.mitigated
+                    v_buffer := imb.close_time + cspacer * mitigated_extend
+                    line.set_color(imb.box2.ce, imb.isbullish ? mitigated_color_bull : mitigated_color_bear)
+                    linefill.set_color(imb.box2.fill, color.new(imb.isbullish ? mitigated_color_bull : mitigated_color_bear, fill_percent))
+                else
+                    if extendby == 'When in Range'
+                        float atrlength = ta.atr(14) * atrfactor
+                        if math.max(imb.open, imb.close) > close - atrlength and math.min(imb.open, imb.close) < close + atrlength
+                            v_buffer := time + cspacer * (extend + 1 + (level - 1) * buffer)
+                            v_buffer
+                        else
+                            v_buffer := imb.close_time + cspacer * (extend + 1)
+                            v_buffer
+                    else
+                        v_buffer := time + cspacer * (extend + 1 + (level - 1) * buffer)
+                        v_buffer
+
+                line.set_x2(imb.box2.open, v_buffer)
+                line.set_x2(imb.box2.close, v_buffer)
+                label.set_x(imb.box2.label_ce, v_buffer)
+
+                if CE_show
+                    line.set_x2(imb.box2.ce, v_buffer)
+
+// AddImbalance adds a newly discovered FVG zone to the active list
+method AddImbalance(FvgStructure IS, float o, float c, int o_time, int c_time) =>
+    FvgZone imb = FvgZone.new()
+    imb.open_time := o < c ? find_high_bar_time(o, o_time, o_time, false) : find_low_bar_time(o, o_time, o_time, false) // o_time
+    imb.close_time := o < c ? find_low_bar_time(c, o_time, c_time, true) : find_high_bar_time(c, o_time, c_time, true) // c_time
+    imb.open := o
+    imb.middle := (o + c) / 2
+    imb.close := c
+    imb.isbullish := o < c
+    IS.imbalance.unshift(imb)
+
+    if IS.imbalance.size() > IS.settings.max_count
+        temp = IS.imbalance.pop()
+        temp.clear()
+    IS
+
+// CheckMitigated checks whether the FVG has been filled based on the active settings
+method CheckMitigated(FvgStructure IS, o, h, l, c, bool isHTF) =>
+    if IS.imbalance.size() > 0
+        for i = IS.imbalance.size() - 1 to 0 by 1
+            imb = IS.imbalance.get(i)
+
+            if not imb.mitigated
+                switch mitigated_type
+                    'None' => 
+                	    imb.mitigated := false
+                	    imb.mitigated
+                    'Touched' => 
+                	    imb.mitigated := (imb.open <= imb.close ? low < imb.close : high > imb.close)
+                	    imb.mitigated
+                    'Wick filled' => 
+                	    imb.mitigated := (imb.open <= imb.close ? low <= imb.open : high >= imb.open)
+                	    imb.mitigated
+                    'Body filled' => 
+                	    imb.mitigated := isHTF and (imb.open < imb.close ? math.min(o, c) <= imb.open : math.max(o, c) >= imb.open)
+                	    imb.mitigated
+                    'Wick filled half' => 
+                	    imb.mitigated := imb.open <= imb.close ? low <= imb.middle : high >= imb.middle
+                	    imb.mitigated
+                    'Body filled half' => 
+                	    imb.mitigated := isHTF and (imb.open <= imb.close ? math.min(o, c) <= imb.middle : math.max(o, c) >= imb.middle)
+                	    imb.mitigated
+                if imb.mitigated
+                    if not mitigated_show
+                        imb.clear()
+                        IS.imbalance.remove(i)
+                    else
+                        imb.mitigated_time := time
+                        imb.mitigated_time
+                    IS.updateZone()
+    IS
+
+method ProximityTest(FvgStructure IS) =>
+    if IS.imbalance.size() > 0
+        [rl, rh] = helper.ProximityRange(IS.settings.htf)
+        for i = 0 to IS.imbalance.size() - 1 by 1
+            imb = IS.imbalance.get(i)
+            if (math.max(imb.open, imb.close) > rl and math.min(imb.open, imb.close) < rh) or not useProximity
+                IS.AddZone(imb, IS.order)
+            else
+                imb.clear()
+    IS
+    // FindImbalance looks for imbalances and, if found, adds it to the list
+method FindImbalance(FvgStructure IS, o, h, l, c, t, o1, h1, l1, c1, t1, o2, h2, l2, c2, t2) =>
+    if IS.settings.show
+        if h < l2 and h > l1 and l2 < h1
+            IS.AddImbalance(l2, h, t2, t)
+        if l > h2 and l < h1 and h2 > l1
+            IS.AddImbalance(h2, l, t2, t)
+    IS
+
+method Process(FvgStructure IS, float o, float h, float l, float c, int t, float o1, float h1, float l1, float c1, int t1, float o2, float h2, float l2, float c2, int t2) =>
+    bool show = false
+
+    if IS.settings.show
+        if helper.Validtimeframe(IS.settings.htf)
+            IS.FindImbalance(o, h, l, c, t, o1, h1, l1, c1, t1, o2, h2, l2, c2, t2)
+
+getHTF(string htf, int i) =>
+    [open[i], high[i], low[i], close[i], time[i]]
+
+method check(FvgStructure IS, string htf) =>
+    bool newCandle = bool(ta.change(time(htf, "america/New_York")))
+    if newCandle
+        int inc = 1 //barstate.isrealtime ? 1 : 0
+        [o, h, l, c, t]        = request.security(syminfo.tickerid, htf, getHTF(htf, inc), lookahead = barmerge.lookahead_on)
+        [o1, h1, l1, c1, t1]   = request.security(syminfo.tickerid, htf, getHTF(htf, inc+1), lookahead = barmerge.lookahead_on)
+        [o2, h2, l2, c2, t2]   = request.security(syminfo.tickerid, htf, getHTF(htf, inc+2), lookahead = barmerge.lookahead_on)
+        if not na(o)
+            IS.Process(o, h, l, c, t, o1, h1, l1, c1, t1, o2, h2, l2, c2, t2)
+            IS.ProximityTest()
+            IS.CheckMitigated(o, h, l, c, bool(ta.change(time(htf, "america/New_York"))))
+
+    IS.CheckMitigated(open, high, low, close, newCandle)
+
+    IS.updateZone()
+
+
+// ── Main Call to Draw FVGs ──────────────────────────────────────
+// daily and monthly are used for proximity test on higher timeframes
+daily := request.security(syminfo.tickerid, '1D', ta.atr(14))
+monthly := request.security(syminfo.tickerid, '1M', ta.atr(14))
+
+int cnt = 0
+int last = helper.HTFEnabled()
+
+if showFvgs // barstate.isconfirmed
+    if FVG_1.settings.show
+        if helper.Validtimeframe(FVG_1.settings.htf)
+            cnt := cnt + 1
+            FVG_1.order := cnt
+            FVG_1.check(FVG_1.settings.htf)
+
+    if FVG_2.settings.show
+        if helper.Validtimeframe(FVG_2.settings.htf)
+            if cnt < last
+                cnt := cnt + 1
+                FVG_2.order := cnt
+                FVG_2.check(FVG_2.settings.htf)
+
+    if FVG_3.settings.show
+        if helper.Validtimeframe(FVG_3.settings.htf)
+            if cnt < last
+                cnt := cnt + 1
+                FVG_3.order := cnt
+                FVG_3.check(FVG_3.settings.htf)
+
+    if FVG_4.settings.show
+        if helper.Validtimeframe(FVG_4.settings.htf)
+            if cnt < last
+                cnt := cnt + 1
+                FVG_4.order := cnt
+                FVG_4.check(FVG_4.settings.htf)
+
+
+// ── Swing Helper Functions ──────────────────────────────────────
+
+format_timeframe_label(tf) =>
+    (
+     str.tonumber(tf) <= 30 ? tf + "m" :
+     tf == "60"  ? "1h"  :
+     tf == "120" ? "2h"  :
+     tf == "180" ? "3h"  :
+     tf == "240" ? "4h"  :
+     tf
+    )
+
+round_to_tick(base, price) =>
+    t = price / syminfo.mintick
+    price >= base ? math.ceil(t) * syminfo.mintick : math.floor(t) * syminfo.mintick
+
+
+// ── Draw Swings ─────────────────────────────────────────
+f_draw_swings(settings, labelOffsetBars, highLines, highLevels, highLabels, lowLines, lowLevels, lowLabels, allLines, oldHighLines, oldLowLines, oldHighLabels, oldLowLabels) =>
+
+    bool touchedHigh = false
+    bool touchedLow  = false
+
+    futureTime = time + timeframe.in_seconds() * 1000 * labelOffsetBars
+
+    ph = request.security(syminfo.tickerid, settings.htf,
+         ta.pivothigh(high, swingLength, swingLength),
+         barmerge.gaps_off, barmerge.lookahead_off)
+
+    pl = request.security(syminfo.tickerid, settings.htf,
+         ta.pivotlow(low, swingLength, swingLength),
+         barmerge.gaps_off, barmerge.lookahead_off)
+
+    t_center = request.security(syminfo.tickerid, settings.htf,
+         time[swingLength],
+         barmerge.gaps_off, barmerge.lookahead_off)
+
+    newHighPivot = not na(ph) and na(ph[1])
+    newLowPivot  = not na(pl) and na(pl[1])
+
+    if newHighPivot and not na(t_center)
+        level = round_to_tick(ph, ph)
+
+        l = line.new(
+            t_center,
+            level,
+            time,
+            level,
+            xloc = xloc.bar_time,
+            extend = extend.none,
+            color = settings.color_bear,
+            width = swingLineWidth,
+            style = helper.LineStyle(swingLineStyle))
+        
+        lbl = label.new(
+            time,
+            level,
+            format_timeframe_label(settings.htf),
+            xloc = xloc.bar_time,
+            style = label.style_none,
+            color = color_transparent,
+            textcolor = showSwingLabel ? settings.color_bear : color_transparent,
+            size = swingLabelSize)
+
+        array.push(highLines, l)
+        array.push(highLevels, level)
+        array.push(highLabels, lbl)
+        array.push(allLines, l)
+
+    if newLowPivot and not na(t_center)
+        level = round_to_tick(pl, pl)
+
+        l = line.new(
+            t_center,
+            level,
+            time,
+            level,
+            xloc = xloc.bar_time,
+            extend = extend.none,
+            color = settings.color_bull,
+            width = swingLineWidth,
+            style = helper.LineStyle(swingLineStyle))
+
+        lbl = label.new(
+            time,
+            level,
+            format_timeframe_label(settings.htf),
+            xloc = xloc.bar_time,
+            style = label.style_none,
+            color = color_transparent,
+            textcolor = showSwingLabel ? settings.color_bull : color_transparent,
+            size = swingLabelSize)
+
+        array.push(lowLines, l)
+        array.push(lowLevels, level)
+        array.push(lowLabels, lbl)
+        array.push(allLines, l)
+
+    hiSz = array.size(highLevels)
+    if hiSz > 0
+        for i = hiSz - 1 to 0
+            lvl = array.get(highLevels, i)
+            ln  = array.get(highLines, i)
+            lbl = array.get(highLabels, i)
+
+            line.set_xy2(ln, futureTime, lvl)
+            label.set_x(lbl, futureTime)
+            label.set_y(lbl, lvl)
+
+            if high >= lvl
+                idx = array.indexof(allLines, ln)
+                if idx >= 0
+                    array.remove(allLines, idx)
+                if showOldSwing
+                    line.set_style(ln, line.style_dotted)
+                    line.set_color(ln, color.new(settings.color_bear, 30))
+                    label.set_textcolor(lbl, color.new(showSwingLabel ? settings.color_bear : color_transparent, 30))
+                    // label.set_style(lbl, label.style_label_down)
+
+                    array.push(oldHighLines, ln)
+                    array.push(oldHighLabels, lbl)
+                    while array.size(oldHighLines) > oldSwingCount
+                        oldLine  = array.shift(oldHighLines)
+                        oldLabel = array.shift(oldHighLabels)
+
+                        line.delete(oldLine)
+                        label.delete(oldLabel)
+                else
+                    line.delete(ln)
+                    label.delete(lbl)
+
+                array.remove(highLevels, i)
+                array.remove(highLines, i)
+                array.remove(highLabels, i)
+                touchedHigh := true
+
+    loSz = array.size(lowLevels)
+    if loSz > 0
+        for i = loSz - 1 to 0
+            lvl = array.get(lowLevels, i)
+            ln  = array.get(lowLines, i)
+            lbl = array.get(lowLabels, i)
+
+            line.set_xy2(ln, futureTime, lvl)
+            label.set_x(lbl, futureTime)
+            label.set_y(lbl, lvl)
+
+            if low <= lvl
+                idx = array.indexof(allLines, ln)
+                if idx >= 0
+                    array.remove(allLines, idx)
+                if showOldSwing
+                    line.set_style(ln, line.style_dotted)
+                    line.set_color(ln, color.new(settings.color_bull, 30))
+                    label.set_textcolor(lbl, color.new(showSwingLabel ? settings.color_bull : color_transparent, 30))
+                    // label.set_style(lbl, label.style_label_up)
+
+                    array.push(oldLowLines, ln)
+                    array.push(oldLowLabels, lbl)
+                    while array.size(oldLowLines) > oldSwingCount
+                        oldLine  = array.shift(oldLowLines)
+                        oldLabel = array.shift(oldLowLabels)
+
+                        line.delete(oldLine)
+                        label.delete(oldLabel)
+                else
+                    line.delete(ln)
+                    label.delete(lbl)
+
+                array.remove(lowLevels, i)
+                array.remove(lowLines, i)
+                array.remove(lowLabels, i)
+                touchedLow := true
+
+    while array.size(highLines) > settings.max_count
+        oldLine  = array.shift(highLines)
+        oldLabel = array.shift(highLabels)
+        array.shift(highLevels)
+
+        if not na(oldLine)
+            line.delete(oldLine)
+        if not na(oldLabel)
+            label.delete(oldLabel)
+
+        idx = array.indexof(allLines, oldLine)
+        if idx >= 0
+            array.remove(allLines, idx)
+
+    while array.size(lowLines) > settings.max_count
+        oldLine  = array.shift(lowLines)
+        oldLabel = array.shift(lowLabels)
+        array.shift(lowLevels)
+
+        if not na(oldLine)
+            line.delete(oldLine)
+        if not na(oldLabel)
+            label.delete(oldLabel)
+
+        idx = array.indexof(allLines, oldLine)
+        if idx >= 0
+            array.remove(allLines, idx)
+
+    [touchedHigh, touchedLow]
+
+var array<line> highLines_htf1 = array.new_line()
+var array<float> highLevels_htf1 = array.new_float()
+var array<label> highLabels_htf1 = array.new_label()
+var array<line> lowLines_htf1 = array.new_line()
+var array<float> lowLevels_htf1 = array.new_float()
+var array<label> lowLabels_htf1 = array.new_label()
+var array<line> allLines_htf1 = array.new_line()
+var array<line> oldHighLines_htf1 = array.new_line()
+var array<line> oldLowLines_htf1 = array.new_line()
+var array<label> oldHighLabels_htf1 = array.new_label()
+var array<label> oldLowLabels_htf1 = array.new_label()
+
+var array<line> highLines_htf2 = array.new_line()
+var array<float> highLevels_htf2 = array.new_float()
+var array<label> highLabels_htf2 = array.new_label()
+var array<line> lowLines_htf2 = array.new_line()
+var array<float> lowLevels_htf2 = array.new_float()
+var array<label> lowLabels_htf2 = array.new_label()
+var array<line> allLines_htf2 = array.new_line()
+var array<line> oldHighLines_htf2 = array.new_line()
+var array<line> oldLowLines_htf2 = array.new_line()
+var array<label> oldHighLabels_htf2 = array.new_label()
+var array<label> oldLowLabels_htf2 = array.new_label()
+
+var array<line> highLines_htf3 = array.new_line()
+var array<float> highLevels_htf3 = array.new_float()
+var array<label> highLabels_htf3 = array.new_label()
+var array<line> lowLines_htf3 = array.new_line()
+var array<float> lowLevels_htf3 = array.new_float()
+var array<label> lowLabels_htf3 = array.new_label()
+var array<line> allLines_htf3 = array.new_line()
+var array<line> oldHighLines_htf3 = array.new_line()
+var array<line> oldLowLines_htf3 = array.new_line()
+var array<label> oldHighLabels_htf3 = array.new_label()
+var array<label> oldLowLabels_htf3 = array.new_label()
+
+var array<line> highLines_htf4 = array.new_line()
+var array<float> highLevels_htf4 = array.new_float()
+var array<label> highLabels_htf4 = array.new_label()
+var array<line> lowLines_htf4 = array.new_line()
+var array<float> lowLevels_htf4 = array.new_float()
+var array<label> lowLabels_htf4 = array.new_label()
+var array<line> allLines_htf4 = array.new_line()
+var array<line> oldHighLines_htf4 = array.new_line()
+var array<line> oldLowLines_htf4 = array.new_line()
+var array<label> oldHighLabels_htf4 = array.new_label()
+var array<label> oldLowLabels_htf4 = array.new_label()
+
+var bool touchedHighThisBar = false
+var bool touchedLowThisBar = false
+touchedHighThisBar := false
+touchedLowThisBar := false
+
+// initialize touch flags
+tHighHTF1 = false
+tLowHTF1  = false
+tHighHTF2 = false
+tLowHTF2  = false
+tHighHTF3 = false
+tLowHTF3  = false
+tHighHTF4 = false
+tLowHTF4  = false
+
+if showSwings and HTF_1_Swing_Settings.show and helper.Validtimeframe(HTF_1_Swing_Settings.htf)
+    [thHTF1, tlHTF1] = f_draw_swings(HTF_1_Swing_Settings, labelOffset * 1, highLines_htf1, highLevels_htf1, highLabels_htf1, lowLines_htf1, lowLevels_htf1, lowLabels_htf1, allLines_htf1, oldHighLines_htf1, oldLowLines_htf1, oldHighLabels_htf1, oldLowLabels_htf1)
+    tHighHTF1 := thHTF1
+    tLowHTF1 := tlHTF1
+
+if showSwings and HTF_2_Swing_Settings.show and helper.Validtimeframe(HTF_2_Swing_Settings.htf)
+    [thHTF2, tlHTF2] = f_draw_swings(HTF_2_Swing_Settings, labelOffset * 2, highLines_htf2, highLevels_htf2, highLabels_htf2, lowLines_htf2, lowLevels_htf2, lowLabels_htf2, allLines_htf2, oldHighLines_htf2, oldLowLines_htf2, oldHighLabels_htf2, oldLowLabels_htf2)
+    tHighHTF2 := thHTF2
+    tLowHTF2 := tlHTF2
+
+if showSwings and HTF_3_Swing_Settings.show and helper.Validtimeframe(HTF_3_Swing_Settings.htf)
+    [thHTF3, tlHTF3] = f_draw_swings(HTF_3_Swing_Settings, labelOffset * 3, highLines_htf3, highLevels_htf3, highLabels_htf3, lowLines_htf3, lowLevels_htf3, lowLabels_htf3, allLines_htf3, oldHighLines_htf3, oldLowLines_htf3, oldHighLabels_htf3, oldLowLabels_htf3)
+    tHighHTF3 := thHTF3
+    tLowHTF3 := tlHTF3
+
+if showSwings and HTF_4_Swing_Settings.show and helper.Validtimeframe(HTF_4_Swing_Settings.htf)
+    [thHTF4, tlHTF4] = f_draw_swings(HTF_4_Swing_Settings, labelOffset * 4, highLines_htf4, highLevels_htf4, highLabels_htf4, lowLines_htf4, lowLevels_htf4, lowLabels_htf4, allLines_htf4, oldHighLines_htf4, oldLowLines_htf4, oldHighLabels_htf4, oldLowLabels_htf4)
+    tHighHTF4 := thHTF4
+    tLowHTF4 := tlHTF4
+
+
+// Key-level types and helpers
+type kz
+    string _title
+    array<box> _box
+    array<line> _hi_line
+    array<line> _lo_line
+    array<label> _hi_label
+    array<label> _lo_label
+    array<bool> _hi_valid
+    array<bool> _lo_valid
+    array<float> _range_store
+    float _range_current
+
+type hz
+    array<line> LN
+    array<label> LB
+    array<bool> CO
+
+type dwm_hl
+    array<line> hi_line
+    array<line> lo_line
+    array<label> hi_label
+    array<label> lo_label
+    bool hit_high = false
+    bool hit_low = false
+
+type dwm_info
+    string tf
+    float o = na
+    float h = na
+    float l = na
+    float ph = na
+    float pl = na
+
+type lines_helper
+    hz _hz
+    string h
+    string h_text
+    color h_color
+
+type kz_helper
+    kz _kz
+    string session
+    string tz
+    color c
+    string hi_txt
+    string lo_txt
+
+initLines() =>
+    array<lines_helper> res = array.new<lines_helper>()
+    if use_h1
+        res.push(lines_helper.new(hz.new(array.new_line(), array.new_label(), array.new_bool()), h1, h1_text, h1_color))
+    if use_h2
+        res.push(lines_helper.new(hz.new(array.new_line(), array.new_label(), array.new_bool()), h2, h2_text, h2_color))
+    if use_h3
+        res.push(lines_helper.new(hz.new(array.new_line(), array.new_label(), array.new_bool()), h3, h3_text, h3_color))
+    if use_h4
+        res.push(lines_helper.new(hz.new(array.new_line(), array.new_label(), array.new_bool()), h4, h4_text, h4_color))
+    res
+
+var array<lines_helper> key_lines = initLines()
+
+new_kz_state(string title) =>
+    kz.new(
+        _title = title,
+        _box = array.new_box(),
+        _hi_line = array.new_line(),
+        _lo_line = array.new_line(),
+        _hi_label = array.new_label(),
+        _lo_label = array.new_label(),
+        _hi_valid = array.new_bool(),
+        _lo_valid = array.new_bool(),
+        _range_store = array.new_float())
+
+initKZ() =>
+    array<kz_helper> res = array.new<kz_helper>()
+    if use_asia
+        res.push(kz_helper.new(_kz = new_kz_state('Asia'), session = asia, tz = gmt_tz, c = as_color, hi_txt = 'AS.H', lo_txt = 'AS.L'))
+    if use_london
+        res.push(kz_helper.new(_kz = new_kz_state('London'), session = london, tz = gmt_tz, c = lo_color, hi_txt = 'LO.H', lo_txt = 'LO.L'))
+    if use_nyam
+        res.push(kz_helper.new(_kz = new_kz_state('New York'), session = nyam, tz = gmt_tz, c = na_color, hi_txt = 'NY.H', lo_txt = 'NY.L'))
+    res
+
+var array<kz_helper> key_zones = initKZ()
+
+var d_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label())
+var w_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label())
+var m_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label())
+
+var d_info = dwm_info.new("D")
+var w_info = dwm_info.new("W")
+var m_info = dwm_info.new("M")
+
+var cutoff = "1600-1601"
+t_co = not na(time("", cutoff, gmt_tz))
+
+
+update_dwm_info(dwm_info n) =>
+    if timeframe.change(n.tf)
+        n.ph := n.h
+        n.pl := n.l
+        n.o := open
+        n.h := high
+        n.l := low
+    else
+        n.h := math.max(high, n.h)
+        n.l := math.min(low, n.l)
+
+if dhl
+    update_dwm_info(d_info)
+if whl
+    update_dwm_info(w_info)
+if mhl
+    update_dwm_info(m_info)
+
+dwm_hl(string tf, bool use, dwm_hl hl, dwm_info n, color col) =>
+    if use
+        int future_time = time + (not na(time[1]) ? time - time[1] : timeframe.in_seconds() * 1000) * dwm_extend_candles
+        if hl.hi_line.size() > 0
+            hl.hi_line.get(0).set_x2(future_time)
+            hl.hi_label.get(0).set_x(future_time)
+            hl.lo_line.get(0).set_x2(future_time)
+            hl.lo_label.get(0).set_x(future_time)
+        if timeframe.change(tf)
+            hl.hi_line.unshift(line.new(time, n.ph, time, n.ph, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = kzp_width, color = col))
+            hl.lo_line.unshift(line.new(time, n.pl, time, n.pl, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = kzp_width, color = col))
+            hl.hi_label.unshift(label.new(time, n.ph, "P" + tf + "H", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
+            hl.lo_label.unshift(label.new(time, n.pl, "P" + tf + "L", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
+            hl.hit_high := false
+            hl.hit_low := false
+            if hl.hi_line.size() > max_days
+                hl.hi_line.pop().delete()
+                hl.lo_line.pop().delete()
+                hl.hi_label.pop().delete()
+                hl.lo_label.pop().delete()
+        if hl.hi_line.size() > 0 and enableAlerts and alertKeyLevelBreak
+            if not hl.hit_high and high > hl.hi_line.get(0).get_y1()
+                hl.hit_high := true
+                alert(str.format("Hit P{0}H", tf))
+            if not hl.hit_low and low < hl.lo_line.get(0).get_y1()
+                hl.hit_low := true
+                alert(str.format("Hit P{0}L", tf))
+
+dwm() =>
+    if tf_limit_is_equal_or_more_chart_tf
+        dwm_hl("D", dhl, d_hl, d_info, d_color)
+        dwm_hl("W", whl, w_hl, w_info, w_color)
+        dwm_hl("M", mhl, m_hl, m_info, m_color)
+
+method hz_line(lines_helper this) =>
+    bool t = not na(time("", this.h, gmt_tz))
+    bool t_prev = not na(time("", this.h, gmt_tz, bars_back = 1))
+    hz hz = this._hz
+    string txt = this.h_text
+    color col = this.h_color
+
+    bool newTradingDay = ta.change(time("D", "1800-1759")) != 0
+
+    if newTradingDay
+        while hz.LN.size() > 0
+            hz.LN.pop().delete()
+            hz.LB.pop().delete()
+            hz.CO.pop()
+    if t and not t_prev
+        hz.LN.unshift(line.new(bar_index, open, bar_index, open, style = helper.LineStyle(hz_style), width = hz_width, color = col))
+        hz.LB.unshift(label.new(bar_index, open, txt, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
+        array.unshift(hz.CO, false)
+    if not t and hz.CO.size() > 0
+        if not hz.CO.get(0)
+            hz.LN.get(0).set_x2(bar_index + dwm_extend_candles)
+            hz.LB.get(0).set_x(bar_index + dwm_extend_candles)
+            if t_co
+                hz.CO.set(0, true)
+
+hz_lines() =>
+    if tf_limit_is_equal_or_more_chart_tf
+        for [_, value] in key_lines
+            hz_line(value)
+
+del_kz(kz k) =>
+    if k._box.size() > max_days
+        k._box.pop().delete()
+    if k._hi_line.size() > max_days
+        k._hi_line.pop().delete()
+        k._lo_line.pop().delete()
+        k._hi_valid.pop()
+        k._lo_valid.pop()
+    if k._hi_label.size() > max_days
+        k._hi_label.pop().delete()
+        k._lo_label.pop().delete()
+
+adjust_in_kz(kz kz, bool t) =>
+    if t
+        kzBox0 = kz._box.get(0)
+        kzBox0.set_right(time)
+        newTop = math.max(kzBox0.get_top(), high)
+        kzBox0.set_top(newTop)
+        newBottom = math.min(kzBox0.get_bottom(), low)
+        kzBox0.set_bottom(newBottom)
+
+        kz._range_current := newTop - newBottom
+
+        if kz._hi_line.size() > 0
+            kzHiLine0 = kz._hi_line.get(0)
+            kzHiLine0.set_x2(bar_index)
+            if high > kzHiLine0.get_y1()
+                kzHiLine0.set_xy1(bar_index, high)
+                kzHiLine0.set_xy2(bar_index, high)
+
+            kzLoLine0 = kz._lo_line.get(0)
+            kzLoLine0.set_x2(bar_index)
+            if low < kzLoLine0.get_y1()
+                kzLoLine0.set_xy1(bar_index, low)
+                kzLoLine0.set_xy2(bar_index, low)
+
+        if kz._hi_label.size() > 0
+            if label_right
+                kz._hi_label.get(0).set_x(bar_index)
+                kz._lo_label.get(0).set_x(bar_index)
+            if high > kz._hi_label.get(0).get_y()
+                if label_right
+                    kz._hi_label.get(0).set_xy(bar_index, high)
+                else
+                    kz._hi_label.get(0).set_xy(time, high)
+            if low < kz._lo_label.get(0).get_y()
+                if label_right
+                    kz._lo_label.get(0).set_xy(bar_index, low)
+                else
+                    kz._lo_label.get(0).set_xy(time, low)
+
+adjust_out_kz(kz kz, bool t, bool t_prev) =>
+    boxCount = kz._box.size()
+    if not t and boxCount > 0
+        if t_prev
+            array.unshift(kz._range_store, kz._range_current)
+            if kz._range_store.size() > 5
+                kz._range_store.pop()
+
+    if boxCount > 0
+        for i = 0 to boxCount - 1 by 1
+            if i == 0
+                kzHiValid = kz._hi_valid.get(i)
+                if kzHiValid
+                    kz._hi_line.get(i).set_x2(bar_index + 3)
+                    if label_right
+                        kz._hi_label.get(i).set_x(bar_index)
+                if kzHiValid and high > kz._hi_line.get(i).get_y1()
+                    if enableAlerts and alertKeyLevelBreak and i == 0
+                        alert(kz._title + ' High Broken', alert.freq_once_per_bar)
+                    kz._hi_valid.set(i, false)
+                    if label_right
+                        kz._hi_label.get(i).set_style(label.style_label_down)
+
+                kzLoValid = kz._lo_valid.get(i)
+                if kzLoValid
+                    kz._lo_line.get(i).set_x2(bar_index + 3)
+                    if label_right
+                        kz._lo_label.get(i).set_x(bar_index)
+                if kzLoValid and low < kz._lo_line.get(i).get_y1()
+                    if enableAlerts and alertKeyLevelBreak and i == 0
+                        alert(kz._title + " Low Broken", alert.freq_once_per_bar)
+                    kz._lo_valid.set(i, false)
+                    if label_right
+                        kz._lo_label.get(i).set_style(label.style_label_up)
+            else
+                break
+
+method manage_kz(kz_helper this) =>
+    kz kz = this._kz
+    c = this.c
+    string hi_txt = this.hi_txt
+    string lo_txt = this.lo_txt
+
+    if tf_limit_is_equal_or_more_chart_tf
+        t = not na(time("", this.session, this.tz))
+        t_prev = not na(time("", this.session, this.tz, bars_back = 1))
+        if t and not t_prev
+            kz._box.unshift(box.new(time, high, time, low, xloc = xloc.bar_time, border_color = na, bgcolor = na, text_color = na))
+            kz._hi_line.unshift(line.new(bar_index, high, bar_index, high, xloc = xloc.bar_index, style = helper.LineStyle(kzp_style), color = c, width = kzp_width))
+            kz._lo_line.unshift(line.new(bar_index, low, bar_index, low, xloc = xloc.bar_index, style = helper.LineStyle(kzp_style), color = c, width = kzp_width))
+            array.unshift(kz._hi_valid, true)
+            array.unshift(kz._lo_valid, true)
+            if label_right
+                kz._hi_label.unshift(label.new(bar_index, high, hi_txt, xloc = xloc.bar_index, color = color_transparent, textcolor = c, style = label.style_label_left, size = lbl_size))
+                kz._lo_label.unshift(label.new(bar_index, low, lo_txt, xloc = xloc.bar_index, color = color_transparent, textcolor = c, style = label.style_label_left, size = lbl_size))
+            else
+                kz._hi_label.unshift(label.new(time, high, hi_txt, xloc = xloc.bar_time, color = color_transparent, textcolor = c, style = label.style_label_down, size = lbl_size))
+                kz._lo_label.unshift(label.new(time, low, lo_txt, xloc = xloc.bar_time, color = color_transparent, textcolor = c, style = label.style_label_up, size = lbl_size))
+            del_kz(kz)
+        adjust_in_kz(kz, t)
+        adjust_out_kz(kz, t, t_prev)
+
+if showKeyLevels
+    for [_, value] in key_zones
+        manage_kz(value)
+    dwm()
+if showOpenLines
+    hz_lines()
+
+// ── Swing Alerts ─────────────────────────
+
+// combine all TF touches
+touchedHighThisBar := tHighHTF1 or tHighHTF2 or tHighHTF3 or tHighHTF4
+touchedLowThisBar  := tLowHTF1  or tLowHTF2 or tLowHTF3 or tLowHTF4
+
+anyTouch = touchedHighThisBar or touchedLowThisBar
+bothTouch = touchedHighThisBar and touchedLowThisBar
+
+// ── Dynamic Alert Message ─────────────────────────
+string highTFs = ""
+string lowTFs  = ""
+
+// Highs
+if tHighHTF1
+    highTFs += format_timeframe_label(HTF_1_Swing_Settings.htf) + ", "
+
+if tHighHTF2
+    highTFs += format_timeframe_label(HTF_2_Swing_Settings.htf) + ", "
+
+if tHighHTF3
+    highTFs += format_timeframe_label(HTF_3_Swing_Settings.htf) + ", "
+
+if tHighHTF4
+    highTFs += format_timeframe_label(HTF_4_Swing_Settings.htf) + ", "
+// Lows
+if tLowHTF1
+    lowTFs += format_timeframe_label(HTF_1_Swing_Settings.htf) + ", "
+
+if tLowHTF2
+    lowTFs += format_timeframe_label(HTF_2_Swing_Settings.htf) + ", "
+
+if tLowHTF3
+    lowTFs += format_timeframe_label(HTF_3_Swing_Settings.htf) + ", "
+
+if tLowHTF4
+    lowTFs += format_timeframe_label(HTF_4_Swing_Settings.htf) + ", "
+
+// Build final message
+string touchedMsg = ""
+
+// High message
+if alertSwingsBreak and str.length(highTFs) > 2
+    highTFs := str.substring(highTFs, 0, str.length(highTFs) - 2)
+    touchedMsg += highTFs + " Swing High Broken"
+
+// Low message
+if alertSwingsBreak and str.length(lowTFs) > 2
+    lowTFs := str.substring(lowTFs, 0, str.length(lowTFs) - 2)
+
+    if touchedMsg != ""
+        touchedMsg += " | "
+
+    touchedMsg += lowTFs + " Swing Low Broken"
+
+// Trading Session
+inAsiaSession     = not na(time(timeframe.period, asiaSession))
+inLondonSession   = not na(time(timeframe.period, londonSession))
+inNewYorkSession  = not na(time(timeframe.period, newYorkSession))
+
+allowAlert =
+     (alertAsia and inAsiaSession) or
+     (alertLondon and inLondonSession) or
+     (alertNewYork and inNewYorkSession)
+
+// Fire alert
+if enableAlerts and allowAlert and touchedMsg != ""
+    alert(touchedMsg, alert.freq_once_per_bar)
