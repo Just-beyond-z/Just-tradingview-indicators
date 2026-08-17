@@ -163,7 +163,7 @@ settings.htf_label_color        := color.new(#000000, 0)
 settings.htf_label_size         := size.normal 
 
 settings.label_position         := "Top" 
-settings.label_alignment        := "Align"
+settings.label_alignment        := "Follow Candles"
 
 settings.candle_time            := true 
 settings.dow_color              := color.new(#000000, 10) 
