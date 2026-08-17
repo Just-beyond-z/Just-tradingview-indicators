@@ -41,48 +41,61 @@ type ScriptHelper
 
 // ── General Settings ─────────────────────────────────────────
 generalSettings = "General"
-showKeyLevels = input.bool(true, "Show Key Levels", inline='G1', group=generalSettings)
-showOpenLines = input.bool(true, "Show Opening Prices", inline='G1', group=generalSettings)
+showKeyLevels = input.bool(false, "Show Key Levels", inline='G1', group=generalSettings)
+showOpenLines = input.bool(false, "Show Opening Prices", inline='G1', group=generalSettings)
 
 showFvgs = input.bool(true, "Show FVGs", inline='G2', group=generalSettings)
 showSwings = input.bool(true, "Show Swings", inline='G2', group=generalSettings)
 
-// ── Key Levels ─────────────────────────────────────────
-var g_KEY_LEVELS = "Key Level Settings"
 
-max_days = 1
-tf_limit = "30"
-gmt_tz = 'America/New_York' //input.string('America/New_York', "Timezone", options = ['America/New_York','GMT-12','GMT-11','GMT-10','GMT-9','GMT-8','GMT-7','GMT-6','GMT-5','GMT-4','GMT-3','GMT-2','GMT-1','GMT+0','GMT+1','GMT+2','GMT+3','GMT+4','GMT+5','GMT+6','GMT+7','GMT+8','GMT+9','GMT+10','GMT+11','GMT+12','GMT+13','GMT+14'], tooltip = "Note GMT is not adjusted to reflect Daylight Saving Time changes", group = g_KEY_LEVELS)
-lbl_size = size.tiny
-dwm_extend_candles = 13
-var tf_limit_is_equal_or_more_chart_tf = timeframe.in_seconds('') <= timeframe.in_seconds(tf_limit)
+// ── Swing Settings ─────────────────────────────────────────
+swingSettings = "Swing Settings"
+TimeframeSettings HTF_1_Swing_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_2_Swing_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_3_Swing_Settings = TimeframeSettings.new()
+TimeframeSettings HTF_4_Swing_Settings = TimeframeSettings.new()
 
-kzp_style = input.string(defval = '⎯⎯⎯', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = "KZP", group = g_KEY_LEVELS)
-kzp_width = input.int(1, "Width", inline = "KZP", group = g_KEY_LEVELS)
-label_right = false
+swingLineStyle = input.string(defval = '····', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = 'sl1', group = swingSettings)
+swingLineWidth = input.int(1, "Width", inline = "sl1", group = swingSettings)
 
-use_asia = input.bool(true, "", inline = "AS1", group = g_KEY_LEVELS)
-asia = input.session("1800-0200", "Asia Session", inline = "AS1", group = g_KEY_LEVELS)
-as_color = input.color(#4a4a4a, "", inline = "AS1", group = g_KEY_LEVELS)
+HTF_1_Swing_Settings.show := input.bool(false, '', inline = 'htf1', group = swingSettings)
+HTF_1_Swing_Settings.htf := input.timeframe('30', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf1', group = swingSettings)
+HTF_1_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf1', group = swingSettings)
+HTF_1_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf1', group = swingSettings)
+HTF_1_Swing_Settings.max_count := input.int(3, '', inline = 'htf1', group = swingSettings)
 
-use_london = input.bool(true, "", inline = "LO1", group = g_KEY_LEVELS)
-london = input.session("0200-0800", "London Session", inline = "LO1", group = g_KEY_LEVELS)
-lo_color = input.color(#4a4a4a, "", inline = "LO1", group = g_KEY_LEVELS)
+HTF_2_Swing_Settings.show := input.bool(false, '', inline = 'htf2', group = swingSettings)
+HTF_2_Swing_Settings.htf := input.timeframe('60', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf2', group = swingSettings)
+HTF_2_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf2', group = swingSettings)
+HTF_2_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf2', group = swingSettings)
+HTF_2_Swing_Settings.max_count := input.int(2, '', inline = 'htf2', group = swingSettings)
 
-use_nyam = input.bool(true, "", inline = "NY1", group = g_KEY_LEVELS)
-nyam = input.session("0930-1730", "Session", inline = "NY1", group = g_KEY_LEVELS)
-na_color = input.color(#4a4a4a, "", inline = "NY1", group = g_KEY_LEVELS)
+HTF_3_Swing_Settings.show := input.bool(true, '', inline = 'htf3', group = swingSettings)
+HTF_3_Swing_Settings.htf := input.timeframe('240', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf3', group = swingSettings)
+HTF_3_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf3', group = swingSettings)
+HTF_3_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf3', group = swingSettings)
+HTF_3_Swing_Settings.max_count := input.int(5, '', inline = 'htf3', group = swingSettings)
 
-var g_DWM_GEN = "Previous High & Low"
-dhl = input.bool(true, "Day", inline = "D1", group = g_DWM_GEN)
-d_color = input.color(#7e57c2, "", inline = "D1", group = g_DWM_GEN)
+HTF_4_Swing_Settings.show := input.bool(true, '', inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.htf := input.timeframe('D', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.max_count := input.int(1, '', inline = 'htf4', group = swingSettings)
 
-whl = input.bool(true, "Week", inline = "D1", group = g_DWM_GEN)
-w_color = input.color(#7e57c2, "", inline = "D1", group = g_DWM_GEN)
+swingLength = input.int(1, 'Swing Strength (Bars Left = Right)', minval = 0, group = swingSettings)
 
-mhl = input.bool(true, "Month", inline = "D1", group = g_DWM_GEN)
-m_color = input.color(#7e57c2, "", inline = "D1", group = g_DWM_GEN)
+showOldSwing = input.bool(true, "", inline='os', group = swingSettings)
+old_swing_line_style = line.style_solid
+oldSwingCount = input.int(3, "Mitigated Swing", inline='os', minval = 0, group = swingSettings)
 
+showSwingLabel = input.bool(true, '', inline = 'slbl', group = swingSettings)
+swingLabelSizeInput = input.string('Tiny', 'Label', options = ['Tiny', 'Small', 'Normal', 'Large'], inline = 'slbl', group = swingSettings)
+swingLabelSize = switch swingLabelSizeInput
+    'Tiny' => size.tiny
+    'Small' => size.small
+    'Normal' => size.normal
+    'Large' => size.large
+labelOffset = 3
 
 // ── FVG Settings ─────────────────────────────────────────
 fvgSettings = "FVG Settings"
@@ -95,7 +108,7 @@ HTF_1_FVG_Settings.show := input.bool(true, '', inline = 'htf1', group = fvgSett
 HTF_1_FVG_Settings.htf := input.timeframe('30', '', inline = 'htf1', group = fvgSettings)
 HTF_1_FVG_Settings.color_bull := input.color(#dbdbdb, '', inline = 'htf1', group = fvgSettings)
 HTF_1_FVG_Settings.color_bear := input.color(#dbdbdb, '', inline = 'htf1', group = fvgSettings)
-HTF_1_FVG_Settings.max_count := input.int(2, '', inline = 'htf1', group = fvgSettings)
+HTF_1_FVG_Settings.max_count := input.int(3, '', inline = 'htf1', group = fvgSettings)
 
 HTF_2_FVG_Settings.show := input.bool(false, '', inline = 'htf2', group = fvgSettings)
 HTF_2_FVG_Settings.htf := input.timeframe('60', '', inline = 'htf2', group = fvgSettings)
@@ -128,7 +141,7 @@ CE_style = input.string('····', '', options = ['⎯⎯⎯', '----', '···�
 mitigated_show = input.bool(false, 'Mitigated FVG', inline = '2', group = fvgSettings)
 mitigated_color_bull = input.color(#faa1a4, '', inline = '2', group = fvgSettings)
 mitigated_color_bear = input.color(#faa1a4, '', inline = '2', group = fvgSettings)
-mitigated_type = input.string('Wick filled', 'when', options = ['None', 'Touched', 'Wick filled', 'Body filled', 'Wick filled half', 'Body filled half'], inline = '2', group = fvgSettings)
+mitigated_type = input.string('Body filled', 'when', options = ['None', 'Touched', 'Wick filled', 'Body filled', 'Wick filled half', 'Body filled half'], inline = '2', group = fvgSettings)
 mitigated_extend = 5 //input.int(5, 'Extend mitigated lines', minval = 0)
 
 
@@ -141,74 +154,65 @@ atrfactor = 10 //input.int(10, 'Range should be within X candles', minval = 1, g
 
 
 
-// ── Swing Settings ─────────────────────────────────────────
-swingSettings = "Swing Settings"
-TimeframeSettings HTF_1_Swing_Settings = TimeframeSettings.new()
-TimeframeSettings HTF_2_Swing_Settings = TimeframeSettings.new()
-TimeframeSettings HTF_3_Swing_Settings = TimeframeSettings.new()
-TimeframeSettings HTF_4_Swing_Settings = TimeframeSettings.new()
 
-swingLineStyle = input.string(defval = '⎯⎯⎯', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = 'sl1', group = swingSettings)
-swingLineWidth = input.int(1, "Width", inline = "sl1", group = swingSettings)
 
-HTF_1_Swing_Settings.show := input.bool(true, '', inline = 'htf1', group = swingSettings)
-HTF_1_Swing_Settings.htf := input.timeframe('30', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf1', group = swingSettings)
-HTF_1_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf1', group = swingSettings)
-HTF_1_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf1', group = swingSettings)
-HTF_1_Swing_Settings.max_count := input.int(3, '', inline = 'htf1', group = swingSettings)
+// ── Key Levels ─────────────────────────────────────────
+var g_KEY_LEVELS = "Key Level Settings"
 
-HTF_2_Swing_Settings.show := input.bool(false, '', inline = 'htf2', group = swingSettings)
-HTF_2_Swing_Settings.htf := input.timeframe('60', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf2', group = swingSettings)
-HTF_2_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf2', group = swingSettings)
-HTF_2_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf2', group = swingSettings)
-HTF_2_Swing_Settings.max_count := input.int(3, '', inline = 'htf2', group = swingSettings)
+max_days = 1
+tf_limit = "30"
+gmt_tz = 'America/New_York' //input.string('America/New_York', "Timezone", options = ['America/New_York','GMT-12','GMT-11','GMT-10','GMT-9','GMT-8','GMT-7','GMT-6','GMT-5','GMT-4','GMT-3','GMT-2','GMT-1','GMT+0','GMT+1','GMT+2','GMT+3','GMT+4','GMT+5','GMT+6','GMT+7','GMT+8','GMT+9','GMT+10','GMT+11','GMT+12','GMT+13','GMT+14'], tooltip = "Note GMT is not adjusted to reflect Daylight Saving Time changes", group = g_KEY_LEVELS)
+lbl_size = size.tiny
+dwm_extend_candles = 13
+var tf_limit_is_equal_or_more_chart_tf = timeframe.in_seconds('') <= timeframe.in_seconds(tf_limit)
 
-HTF_3_Swing_Settings.show := input.bool(true, '', inline = 'htf3', group = swingSettings)
-HTF_3_Swing_Settings.htf := input.timeframe('240', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf3', group = swingSettings)
-HTF_3_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf3', group = swingSettings)
-HTF_3_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf3', group = swingSettings)
-HTF_3_Swing_Settings.max_count := input.int(2, '', inline = 'htf3', group = swingSettings)
+kzp_style = input.string(defval = '⎯⎯⎯', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = "KZP", group = g_KEY_LEVELS)
+kzp_width = input.int(1, "Width", inline = "KZP", group = g_KEY_LEVELS)
+label_right = input.bool(true, "Label Right", inline = "KZP", group = g_KEY_LEVELS)
 
-HTF_4_Swing_Settings.show := input.bool(false, '', inline = 'htf4', group = swingSettings)
-HTF_4_Swing_Settings.htf := input.timeframe('D', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf4', group = swingSettings)
-HTF_4_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf4', group = swingSettings)
-HTF_4_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf4', group = swingSettings)
-HTF_4_Swing_Settings.max_count := input.int(1, '', inline = 'htf4', group = swingSettings)
+use_asia = input.bool(true, "", inline = "AS1", group = g_KEY_LEVELS)
+asia = input.session("1800-0100", "Asia Session", inline = "AS1", group = g_KEY_LEVELS)
+as_color = input.color(#4a4a4a, "", inline = "AS1", group = g_KEY_LEVELS)
 
-swingLength = input.int(2, 'Swing Strength (Bars Left = Right)', minval = 0, group = swingSettings)
+use_london = input.bool(true, "", inline = "LO1", group = g_KEY_LEVELS)
+london = input.session("0100-0800", "London Session", inline = "LO1", group = g_KEY_LEVELS)
+lo_color = input.color(#4a4a4a, "", inline = "LO1", group = g_KEY_LEVELS)
 
-showOldSwing = input.bool(true, "", inline='os', group = swingSettings)
-oldSwingCount = input.int(2, "Mitigated Swing", inline='os', minval = 0, group = swingSettings)
+use_nyam = input.bool(true, "", inline = "NY1", group = g_KEY_LEVELS)
+nyam = input.session("0800-1730", "NY Session", inline = "NY1", group = g_KEY_LEVELS)
+na_color = input.color(#4a4a4a, "", inline = "NY1", group = g_KEY_LEVELS)
 
-showSwingLabel = input.bool(true, '', inline = 'slbl', group = swingSettings)
-swingLabelSizeInput = input.string('Tiny', 'Label', options = ['Tiny', 'Small', 'Normal', 'Large'], inline = 'slbl', group = swingSettings)
-swingLabelSize = switch swingLabelSizeInput
-    'Tiny' => size.tiny
-    'Small' => size.small
-    'Normal' => size.normal
-    'Large' => size.large
-labelOffset = 3
+var g_DWM_GEN = "Previous High & Low"
+dhl = input.bool(true, "Day", inline = "D1", group = g_DWM_GEN)
+d_color = input.color(#4a4a4a, "", inline = "D1", group = g_DWM_GEN)
+
+whl = input.bool(true, "Week", inline = "D1", group = g_DWM_GEN)
+w_color = input.color(#4a4a4a, "", inline = "D1", group = g_DWM_GEN)
+
+mhl = input.bool(true, "Month", inline = "D1", group = g_DWM_GEN)
+m_color = input.color(#4a4a4a, "", inline = "D1", group = g_DWM_GEN)
+
 
 var g_OPEN = "Opening Prices"
 hz_style = input.string(defval = '····', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = "H0", tooltip = "Applies to all opening price lines below", group = g_OPEN)
 hz_width = input.int(1, "", inline = "H0", group = g_OPEN)
 
-use_h1 = input.bool(true, "", inline = "H1", group = g_OPEN)
+use_h1 = input.bool(false, "", inline = "H1", group = g_OPEN)
 h1_text = input.string("00:00", "Label", inline = "H1", group = g_OPEN)
 h1 = input.session("0000-0001", "Time", inline = "H1", group = g_OPEN)
 h1_color = input.color(color.black, "", inline = "H1", group = g_OPEN)
 
 use_h2 = input.bool(true, "", inline = "H2", group = g_OPEN)
-h2_text = input.string("08:30", "Label", inline = "H2", group = g_OPEN)
-h2 = input.session("0830-0831", "Time", inline = "H2", group = g_OPEN)
+h2_text = input.string("08:00", "Label", inline = "H2", group = g_OPEN)
+h2 = input.session("0800-0801", "Time", inline = "H2", group = g_OPEN)
 h2_color = input.color(color.black, "", inline = "H2", group = g_OPEN)
 
-use_h3 = input.bool(true, "", inline = "H3", group = g_OPEN)
+use_h3 = input.bool(false, "", inline = "H3", group = g_OPEN)
 h3_text = input.string("9:30", "Label", inline = "H3", group = g_OPEN)
 h3 = input.session("0930-0931", "Time", inline = "H3", group = g_OPEN)
 h3_color = input.color(color.black, "", inline = "H3", group = g_OPEN)
 
-use_h4 = input.bool(true, "", inline = "H4", group = g_OPEN)
+use_h4 = input.bool(false, "", inline = "H4", group = g_OPEN)
 h4_text = input.string("10:00", "Label", inline = "H4", group = g_OPEN)
 h4 = input.session("1000-1001", "Time", inline = "H4", group = g_OPEN)
 h4_color = input.color(color.black, "", inline = "H4", group = g_OPEN)
@@ -627,20 +631,20 @@ f_draw_swings(settings, labelOffsetBars, highLines, highLevels, highLabels, lowL
 
     futureTime = time + timeframe.in_seconds() * 1000 * labelOffsetBars
 
-    ph = request.security(syminfo.tickerid, settings.htf,
+    [ph, pl, t_center, htfConfirmed] = request.security(
+     syminfo.tickerid,
+     settings.htf,
+     [
          ta.pivothigh(high, swingLength, swingLength),
-         barmerge.gaps_off, barmerge.lookahead_off)
-
-    pl = request.security(syminfo.tickerid, settings.htf,
          ta.pivotlow(low, swingLength, swingLength),
-         barmerge.gaps_off, barmerge.lookahead_off)
-
-    t_center = request.security(syminfo.tickerid, settings.htf,
          time[swingLength],
-         barmerge.gaps_off, barmerge.lookahead_off)
+         barstate.isconfirmed
+     ],
+     barmerge.gaps_off,
+     barmerge.lookahead_off)
 
-    newHighPivot = not na(ph) and na(ph[1])
-    newLowPivot  = not na(pl) and na(pl[1])
+    newHighPivot = htfConfirmed and not na(ph) and na(ph[1])
+    newLowPivot  = htfConfirmed and not na(pl) and na(pl[1])
 
     if newHighPivot and not na(t_center)
         level = round_to_tick(ph, ph)
@@ -716,7 +720,7 @@ f_draw_swings(settings, labelOffsetBars, highLines, highLevels, highLabels, lowL
                 if idx >= 0
                     array.remove(allLines, idx)
                 if showOldSwing
-                    line.set_style(ln, line.style_dotted)
+                    line.set_style(ln, old_swing_line_style)
                     line.set_color(ln, color.new(settings.color_bear, 30))
                     label.set_textcolor(lbl, color.new(showSwingLabel ? settings.color_bear : color_transparent, 30))
                     // label.set_style(lbl, label.style_label_down)
@@ -754,7 +758,7 @@ f_draw_swings(settings, labelOffsetBars, highLines, highLevels, highLabels, lowL
                 if idx >= 0
                     array.remove(allLines, idx)
                 if showOldSwing
-                    line.set_style(ln, line.style_dotted)
+                    line.set_style(ln, old_swing_line_style)
                     line.set_color(ln, color.new(settings.color_bull, 30))
                     label.set_textcolor(lbl, color.new(showSwingLabel ? settings.color_bull : color_transparent, 30))
                     // label.set_style(lbl, label.style_label_up)
@@ -915,6 +919,8 @@ type dwm_hl
     array<label> lo_label
     bool hit_high = false
     bool hit_low = false
+    int hit_high_time = na
+    int hit_low_time = na
 
 type dwm_info
     string tf
@@ -1008,31 +1014,55 @@ if mhl
 
 dwm_hl(string tf, bool use, dwm_hl hl, dwm_info n, color col) =>
     if use
+        int prev_period_time = ta.valuewhen(timeframe.change(tf), time, 1)
         int future_time = time + (not na(time[1]) ? time - time[1] : timeframe.in_seconds() * 1000) * dwm_extend_candles
         if hl.hi_line.size() > 0
-            hl.hi_line.get(0).set_x2(future_time)
-            hl.hi_label.get(0).set_x(future_time)
-            hl.lo_line.get(0).set_x2(future_time)
-            hl.lo_label.get(0).set_x(future_time)
+            bool touched_high = not hl.hit_high and high >= hl.hi_line.get(0).get_y1()
+            bool touched_low = not hl.hit_low and low <= hl.lo_line.get(0).get_y1()
+
+            if touched_high
+                hl.hit_high := true
+                hl.hit_high_time := time
+                if enableAlerts and alertKeyLevelBreak
+                    alert(str.format("Hit P{0}H", tf))
+            if touched_low
+                hl.hit_low := true
+                hl.hit_low_time := time
+                if enableAlerts and alertKeyLevelBreak
+                    alert(str.format("Hit P{0}L", tf))
+
+            int hi_x2 = hl.hit_high ? hl.hit_high_time : future_time
+            int lo_x2 = hl.hit_low ? hl.hit_low_time : future_time
+            hl.hi_line.get(0).set_x2(hi_x2)
+            hl.lo_line.get(0).set_x2(lo_x2)
+
+            hl.hi_label.get(0).set_x(hi_x2)
+            hl.hi_label.get(0).set_y(hl.hi_line.get(0).get_y1())
+            hl.lo_label.get(0).set_x(lo_x2)
+            hl.lo_label.get(0).set_y(hl.lo_line.get(0).get_y1())
+
+            if hl.hit_high
+                hl.hi_line.get(0).set_color(color.new(col, 70))
+                hl.hi_label.get(0).set_textcolor(color.new(col, 70))
+                hl.hi_label.get(0).set_style(label.style_label_down)
+            if hl.hit_low
+                hl.lo_line.get(0).set_color(color.new(col, 70))
+                hl.lo_label.get(0).set_textcolor(color.new(col, 70))
+                hl.lo_label.get(0).set_style(label.style_label_up)
         if timeframe.change(tf)
-            hl.hi_line.unshift(line.new(time, n.ph, time, n.ph, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = kzp_width, color = col))
-            hl.lo_line.unshift(line.new(time, n.pl, time, n.pl, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = kzp_width, color = col))
+            hl.hi_line.unshift(line.new(prev_period_time, n.ph, time, n.ph, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = kzp_width, color = col))
+            hl.lo_line.unshift(line.new(prev_period_time, n.pl, time, n.pl, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = kzp_width, color = col))
             hl.hi_label.unshift(label.new(time, n.ph, "P" + tf + "H", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
             hl.lo_label.unshift(label.new(time, n.pl, "P" + tf + "L", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
             hl.hit_high := false
             hl.hit_low := false
+            hl.hit_high_time := na
+            hl.hit_low_time := na
             if hl.hi_line.size() > max_days
                 hl.hi_line.pop().delete()
                 hl.lo_line.pop().delete()
                 hl.hi_label.pop().delete()
                 hl.lo_label.pop().delete()
-        if hl.hi_line.size() > 0 and enableAlerts and alertKeyLevelBreak
-            if not hl.hit_high and high > hl.hi_line.get(0).get_y1()
-                hl.hit_high := true
-                alert(str.format("Hit P{0}H", tf))
-            if not hl.hit_low and low < hl.lo_line.get(0).get_y1()
-                hl.hit_low := true
-                alert(str.format("Hit P{0}L", tf))
 
 dwm() =>
     if tf_limit_is_equal_or_more_chart_tf
@@ -1136,7 +1166,7 @@ adjust_out_kz(kz kz, bool t, bool t_prev) =>
                 if kzHiValid
                     kz._hi_line.get(i).set_x2(bar_index + 3)
                     if label_right
-                        kz._hi_label.get(i).set_x(bar_index)
+                        kz._hi_label.get(i).set_x(bar_index + 3)
                 if kzHiValid and high > kz._hi_line.get(i).get_y1()
                     if enableAlerts and alertKeyLevelBreak and i == 0
                         alert(kz._title + ' High Broken', alert.freq_once_per_bar)
@@ -1148,7 +1178,7 @@ adjust_out_kz(kz kz, bool t, bool t_prev) =>
                 if kzLoValid
                     kz._lo_line.get(i).set_x2(bar_index + 3)
                     if label_right
-                        kz._lo_label.get(i).set_x(bar_index)
+                        kz._lo_label.get(i).set_x(bar_index + 3)
                 if kzLoValid and low < kz._lo_line.get(i).get_y1()
                     if enableAlerts and alertKeyLevelBreak and i == 0
                         alert(kz._title + " Low Broken", alert.freq_once_per_bar)
