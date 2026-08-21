@@ -599,13 +599,13 @@ ic_cisd_show_input              = input.bool(true, 'IC-CISD', inline='cisd', gro
 settings.ic_cisd_show           := ic_cisd_show_input
 settings.ic_dot_size            := input.string(size.tiny, 'Dot', options=[size.tiny, size.small, size.normal, size.large], inline='cisd', group=group_sweep, active = ic_cisd_show_input)
 settings.cisd_bull_color        := input.color(color.new(#5b9cf6, 0), 'Bull          ', inline='cisd_color', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
-settings.cisd_bear_color        := input.color(color.new(#f7525f, 0), 'Bear', inline='cisd_color', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
+settings.cisd_bear_color        := input.color(color.new(#f77c80, 0), 'Bear', inline='cisd_color', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
 settings.cisd_width             := input.int(2, 'Width', options=[1, 2, 3, 4], inline='cisd_style', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
 settings.cisd_style             := input.string('Solid', 'Style', options=['Solid', 'Dashed', 'Dotted'], inline='cisd_style', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
 entry_zone_show_input           = input.bool(true, 'Entry Zone   ', inline='entry_zone', group=group_sweep)
 settings.entry_zone_show        := entry_zone_show_input
-settings.entry_zone_bull_color  := input.color(color.new(#81c784, 94), 'Bullish', inline='entry_zone', group=group_sweep, active = entry_zone_show_input)
-settings.entry_zone_bear_color  := input.color(color.new(#636363, 94), 'Bearish', inline='entry_zone', group=group_sweep, active = entry_zone_show_input)
+settings.entry_zone_bull_color  := input.color(color.new(#81c784, 85), 'Bullish', inline='entry_zone', group=group_sweep, active = entry_zone_show_input)
+settings.entry_zone_bear_color  := input.color(color.new(#636363, 85), 'Bearish', inline='entry_zone', group=group_sweep, active = entry_zone_show_input)
 
 // Standard Deviation Projections
 string group_projection         = "Standard Deviation Projections  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
