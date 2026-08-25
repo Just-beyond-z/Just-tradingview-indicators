@@ -1,5 +1,5 @@
 //@version=6
-indicator('HTF Swings & FVG', 'HTF Swings & FVG', overlay = true, max_bars_back = 5000, max_lines_count = 500)
+indicator('Key levels', 'Key levels', overlay = true, max_bars_back = 5000, max_lines_count = 500)
 
 type TimeframeSettings
 	bool show
@@ -41,11 +41,12 @@ type ScriptHelper
 
 // ── General Settings ─────────────────────────────────────────
 generalSettings = "General"
-showKeyLevels = input.bool(false, "Show Key Levels", inline='G1', group=generalSettings)
-showOpenLines = input.bool(false, "Show Opening Prices", inline='G1', group=generalSettings)
+showKeyLevels = input.bool(false, "Session Levels", inline='G1', group=generalSettings)
+showPrevLevels = input.bool(true, "Previous Levels", inline='G1', group=generalSettings)
+showOpenLines = input.bool(false, "Opening Prices", inline='G1', group=generalSettings)
 
-showFvgs = input.bool(true, "Show FVGs", inline='G2', group=generalSettings)
-showSwings = input.bool(true, "Show Swings", inline='G2', group=generalSettings)
+showFvgs = input.bool(true, "FVGs", inline='G2', group=generalSettings)
+showSwings = input.bool(true, "Swings", inline='G2', group=generalSettings)
 
 
 // ── Swing Settings ─────────────────────────────────────────
@@ -78,17 +79,17 @@ HTF_3_Swing_Settings.max_count := input.int(5, '', inline = 'htf3', group = swin
 
 HTF_4_Swing_Settings.show := input.bool(true, '', inline = 'htf4', group = swingSettings)
 HTF_4_Swing_Settings.htf := input.timeframe('D', '', ["5", "15", "30", "60", "120", "180", "240", 'D', 'W'], inline = 'htf4', group = swingSettings)
-HTF_4_Swing_Settings.color_bull := input.color(#636363, '', inline = 'htf4', group = swingSettings)
-HTF_4_Swing_Settings.color_bear := input.color(#636363, '', inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.color_bull := input.color(#673ab7, '', inline = 'htf4', group = swingSettings)
+HTF_4_Swing_Settings.color_bear := input.color(#673ab7, '', inline = 'htf4', group = swingSettings)
 HTF_4_Swing_Settings.max_count := input.int(1, '', inline = 'htf4', group = swingSettings)
 
 swingLength = input.int(1, 'Swing Strength (Bars Left = Right)', minval = 0, group = swingSettings)
 
 showOldSwing = input.bool(true, "", inline='os', group = swingSettings)
 old_swing_line_style = line.style_solid
-oldSwingCount = input.int(3, "Mitigated Swing", inline='os', minval = 0, group = swingSettings)
+oldSwingCount = input.int(2, "Mitigated Swing", inline='os', minval = 0, group = swingSettings)
 
-showSwingLabel = input.bool(true, '', inline = 'slbl', group = swingSettings)
+showSwingLabel = input.bool(false, '', inline = 'slbl', group = swingSettings)
 swingLabelSizeInput = input.string('Tiny', 'Label', options = ['Tiny', 'Small', 'Normal', 'Large'], inline = 'slbl', group = swingSettings)
 swingLabelSize = switch swingLabelSizeInput
     'Tiny' => size.tiny
@@ -104,7 +105,7 @@ TimeframeSettings HTF_2_FVG_Settings = TimeframeSettings.new()
 TimeframeSettings HTF_3_FVG_Settings = TimeframeSettings.new()
 TimeframeSettings HTF_4_FVG_Settings = TimeframeSettings.new()
 
-HTF_1_FVG_Settings.show := input.bool(true, '', inline = 'htf1', group = fvgSettings)
+HTF_1_FVG_Settings.show := input.bool(false, '', inline = 'htf1', group = fvgSettings)
 HTF_1_FVG_Settings.htf := input.timeframe('30', '', inline = 'htf1', group = fvgSettings)
 HTF_1_FVG_Settings.color_bull := input.color(#dbdbdb, '', inline = 'htf1', group = fvgSettings)
 HTF_1_FVG_Settings.color_bear := input.color(#dbdbdb, '', inline = 'htf1', group = fvgSettings)
@@ -156,8 +157,8 @@ atrfactor = 10 //input.int(10, 'Range should be within X candles', minval = 1, g
 
 
 
-// ── Key Levels ─────────────────────────────────────────
-var g_KEY_LEVELS = "Key Level Settings"
+// ── Session Levels Levels ─────────────────────────────────────────
+var g_KEY_LEVELS = "Session Levels Settings"
 
 max_days = 1
 tf_limit = "30"
@@ -166,7 +167,7 @@ lbl_size = size.tiny
 dwm_extend_candles = 13
 var tf_limit_is_equal_or_more_chart_tf = timeframe.in_seconds('') <= timeframe.in_seconds(tf_limit)
 
-kzp_style = input.string(defval = '⎯⎯⎯', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = "KZP", group = g_KEY_LEVELS)
+kzp_style = input.string(defval = '····', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = "KZP", group = g_KEY_LEVELS)
 kzp_width = input.int(1, "Width", inline = "KZP", group = g_KEY_LEVELS)
 label_right = input.bool(true, "Label Right", inline = "KZP", group = g_KEY_LEVELS)
 
@@ -184,14 +185,15 @@ na_color = input.color(#4a4a4a, "", inline = "NY1", group = g_KEY_LEVELS)
 
 var g_DWM_GEN = "Previous High & Low"
 dhl = input.bool(true, "Day", inline = "D1", group = g_DWM_GEN)
-d_color = input.color(#4a4a4a, "", inline = "D1", group = g_DWM_GEN)
+d_color = input.color(#c2185b, "", inline = "D1", group = g_DWM_GEN)
 
 whl = input.bool(true, "Week", inline = "D1", group = g_DWM_GEN)
-w_color = input.color(#4a4a4a, "", inline = "D1", group = g_DWM_GEN)
+w_color = input.color(#c2185b, "", inline = "D1", group = g_DWM_GEN)
 
-mhl = input.bool(true, "Month", inline = "D1", group = g_DWM_GEN)
-m_color = input.color(#4a4a4a, "", inline = "D1", group = g_DWM_GEN)
+mhl = input.bool(false, "Month", inline = "D1", group = g_DWM_GEN)
+m_color = input.color(#c2185b, "", inline = "D1", group = g_DWM_GEN)
 
+max_prev_level = 2
 
 var g_OPEN = "Opening Prices"
 hz_style = input.string(defval = '····', title = "Line Style", options = ['⎯⎯⎯', '----', '····'], inline = "H0", tooltip = "Applies to all opening price lines below", group = g_OPEN)
@@ -223,7 +225,7 @@ alertSettings = "Alert Settings"
 
 enableAlerts      = input.bool(true, "Enable Alerts", group=alertSettings)
 alertSwingsBreak  = input.bool(true, "Alert Swings Break", group=alertSettings)
-alertKeyLevelBreak = input.bool(true, "Alert Key Levels Break", group=alertSettings)
+alertKeyLevelBreak = input.bool(true, "Alert Session Levels Break", group=alertSettings)
 
 alertAsia       = input.bool(false, "", group=alertSettings, inline="asia")
 asiaSession     = input.session("1900-0000", "Asia", group=alertSettings, inline="asia")
@@ -917,10 +919,10 @@ type dwm_hl
     array<line> lo_line
     array<label> hi_label
     array<label> lo_label
-    bool hit_high = false
-    bool hit_low = false
-    int hit_high_time = na
-    int hit_low_time = na
+    array<bool> hit_high
+    array<bool> hit_low
+    array<int> hit_high_time
+    array<int> hit_low_time
 
 type dwm_info
     string tf
@@ -929,6 +931,10 @@ type dwm_info
     float l = na
     float ph = na
     float pl = na
+    int h_time = na
+    int l_time = na
+    int ph_time = na
+    int pl_time = na
 
 type lines_helper
     hz _hz
@@ -972,19 +978,19 @@ new_kz_state(string title) =>
 
 initKZ() =>
     array<kz_helper> res = array.new<kz_helper>()
-    if use_asia
+    if use_asia and na(time(timeframe.period, london))
         res.push(kz_helper.new(_kz = new_kz_state('Asia'), session = asia, tz = gmt_tz, c = as_color, hi_txt = 'AS.H', lo_txt = 'AS.L'))
-    if use_london
+    if use_london and na(time(timeframe.period, nyam))
         res.push(kz_helper.new(_kz = new_kz_state('London'), session = london, tz = gmt_tz, c = lo_color, hi_txt = 'LO.H', lo_txt = 'LO.L'))
-    if use_nyam
+    if use_nyam and na(time(timeframe.period, asia))
         res.push(kz_helper.new(_kz = new_kz_state('New York'), session = nyam, tz = gmt_tz, c = na_color, hi_txt = 'NY.H', lo_txt = 'NY.L'))
     res
 
 var array<kz_helper> key_zones = initKZ()
 
-var d_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label())
-var w_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label())
-var m_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label())
+var d_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
+var w_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
+var m_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
 
 var d_info = dwm_info.new("D")
 var w_info = dwm_info.new("W")
@@ -995,15 +1001,29 @@ t_co = not na(time("", cutoff, gmt_tz))
 
 
 update_dwm_info(dwm_info n) =>
-    if timeframe.change(n.tf)
-        n.ph := n.h
-        n.pl := n.l
-        n.o := open
+    if na(n.h_time)
         n.h := high
         n.l := low
+        n.h_time := time
+        n.l_time := time
+    else if timeframe.change(n.tf)
+        n.ph := n.h
+        n.pl := n.l
+        n.ph_time := n.h_time
+        n.pl_time := n.l_time
+
+        n.h := high
+        n.l := low
+        n.h_time := time
+        n.l_time := time
     else
-        n.h := math.max(high, n.h)
-        n.l := math.min(low, n.l)
+        if high > n.h
+            n.h := high
+            n.h_time := time
+
+        if low < n.l
+            n.l := low
+            n.l_time := time
 
 if dhl
     update_dwm_info(d_info)
@@ -1015,55 +1035,86 @@ if mhl
 dwm_hl(string tf, bool use, dwm_hl hl, dwm_info n, color col) =>
     if use
         int prev_period_time = ta.valuewhen(timeframe.change(tf), time, 1)
-        int future_time = time + (not na(time[1]) ? time - time[1] : timeframe.in_seconds() * 1000) * dwm_extend_candles
-        if hl.hi_line.size() > 0
-            bool touched_high = not hl.hit_high and high >= hl.hi_line.get(0).get_y1()
-            bool touched_low = not hl.hit_low and low <= hl.lo_line.get(0).get_y1()
+        int future_time = time + (not na(time[1]) ? time - time[1] : timeframe.in_seconds() * 1000) * 3
 
-            if touched_high
-                hl.hit_high := true
-                hl.hit_high_time := time
-                if enableAlerts and alertKeyLevelBreak
-                    alert(str.format("Hit P{0}H", tf))
-            if touched_low
-                hl.hit_low := true
-                hl.hit_low_time := time
-                if enableAlerts and alertKeyLevelBreak
-                    alert(str.format("Hit P{0}L", tf))
-
-            int hi_x2 = hl.hit_high ? hl.hit_high_time : future_time
-            int lo_x2 = hl.hit_low ? hl.hit_low_time : future_time
-            hl.hi_line.get(0).set_x2(hi_x2)
-            hl.lo_line.get(0).set_x2(lo_x2)
-
-            hl.hi_label.get(0).set_x(hi_x2)
-            hl.hi_label.get(0).set_y(hl.hi_line.get(0).get_y1())
-            hl.lo_label.get(0).set_x(lo_x2)
-            hl.lo_label.get(0).set_y(hl.lo_line.get(0).get_y1())
-
-            if hl.hit_high
-                hl.hi_line.get(0).set_color(color.new(col, 70))
-                hl.hi_label.get(0).set_textcolor(color.new(col, 70))
-                hl.hi_label.get(0).set_style(label.style_label_down)
-            if hl.hit_low
-                hl.lo_line.get(0).set_color(color.new(col, 70))
-                hl.lo_label.get(0).set_textcolor(color.new(col, 70))
-                hl.lo_label.get(0).set_style(label.style_label_up)
+        // Create new previous-period levels
         if timeframe.change(tf)
-            hl.hi_line.unshift(line.new(prev_period_time, n.ph, time, n.ph, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = kzp_width, color = col))
-            hl.lo_line.unshift(line.new(prev_period_time, n.pl, time, n.pl, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = kzp_width, color = col))
-            hl.hi_label.unshift(label.new(time, n.ph, "P" + tf + "H", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
-            hl.lo_label.unshift(label.new(time, n.pl, "P" + tf + "L", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
-            hl.hit_high := false
-            hl.hit_low := false
-            hl.hit_high_time := na
-            hl.hit_low_time := na
-            if hl.hi_line.size() > max_days
+            hl.hi_line.unshift(line.new(n.ph_time, n.ph, time, n.ph, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = 1, color = col))
+            hl.lo_line.unshift(line.new(n.pl_time, n.pl, time, n.pl, xloc = xloc.bar_time, style = helper.LineStyle(kzp_style), width = 1, color = col))
+            hl.hi_label.unshift(label.new(time, n.ph, "", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
+            hl.lo_label.unshift(label.new(time, n.pl, "", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
+
+            // Add hit state for the new level
+            hl.hit_high.unshift(false)
+            hl.hit_low.unshift(false)
+            hl.hit_high_time.unshift(na)
+            hl.hit_low_time.unshift(na)
+
+            if hl.hi_line.size() >  max_prev_level
                 hl.hi_line.pop().delete()
                 hl.lo_line.pop().delete()
                 hl.hi_label.pop().delete()
                 hl.lo_label.pop().delete()
 
+                hl.hit_high.pop()
+                hl.hit_low.pop()
+                hl.hit_high_time.pop()
+                hl.hit_low_time.pop()
+
+        // Process all previous-period levels
+        if hl.hi_line.size() > 0
+            for i = 0 to hl.hi_line.size() - 1
+
+                float hi_level = hl.hi_line.get(i).get_y1()
+                float lo_level = hl.lo_line.get(i).get_y1()
+                bool already_hit_high = hl.hit_high.get(i)
+                bool already_hit_low  = hl.hit_low.get(i)
+
+                // Check if THIS specific high was touched
+                if not already_hit_high and high >= hi_level
+                    hl.hit_high.set(i, true)
+                    hl.hit_high_time.set(i, time)
+
+                    if enableAlerts and alertKeyLevelBreak
+                        alert("Hit Previous " + tf + str.tostring(i + 1) + " High")
+
+                // Check if THIS specific low was touched
+                if not already_hit_low and low <= lo_level
+                    hl.hit_low.set(i, true)
+                    hl.hit_low_time.set(i, time)
+
+                    if enableAlerts and alertKeyLevelBreak
+                        alert("Hit Previous" + tf + str.tostring(i + 1) + " Low")
+
+                int label_left_offset = timeframe.in_seconds() * 1000 * 4
+                bool high_hit = hl.hit_high.get(i)
+                int hi_x2 = high_hit ? hl.hit_high_time.get(i) : future_time
+                hl.hi_line.get(i).set_x2(hi_x2)
+                bool low_hit = hl.hit_low.get(i)
+                int lo_x2 = low_hit ? hl.hit_low_time.get(i) : future_time
+                hl.lo_line.get(i).set_x2(lo_x2)
+                int hi_label_x = high_hit ? hi_x2 - label_left_offset : hi_x2
+                int lo_label_x = low_hit ? lo_x2 - label_left_offset : lo_x2
+
+                string period_name = "p" + tf + str.tostring(i + 1)
+
+                hl.hi_label.get(i).set_text(period_name + " H")
+                hl.lo_label.get(i).set_text(period_name + " L")
+                hl.hi_label.get(i).set_x(hi_label_x)
+                hl.hi_label.get(i).set_y(hi_level)
+                hl.lo_label.get(i).set_x(lo_label_x)
+                hl.lo_label.get(i).set_y(lo_level)
+
+                if high_hit
+                    hl.hi_line.get(i).set_color(color.new(col, 60))
+                    hl.hi_line.get(i).set_style(line.style_solid)
+                    hl.hi_label.get(i).set_style(label.style_label_down)
+                    hl.hi_label.get(i).set_textcolor(color.new(col, 0))
+                if low_hit
+                    hl.lo_line.get(i).set_color(color.new(col, 60))
+                    hl.lo_line.get(i).set_style(line.style_solid)
+                    hl.lo_label.get(i).set_style(label.style_label_up)
+                    hl.lo_label.get(i).set_textcolor(color.new(col, 0))
 dwm() =>
     if tf_limit_is_equal_or_more_chart_tf
         dwm_hl("D", dhl, d_hl, d_info, d_color)
@@ -1216,6 +1267,7 @@ method manage_kz(kz_helper this) =>
 if showKeyLevels
     for [_, value] in key_zones
         manage_kz(value)
+if showPrevLevels    
     dwm()
 if showOpenLines
     hz_lines()
