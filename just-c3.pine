@@ -33,7 +33,8 @@ type CandleSettings
 type Settings
     color bull_body
     color bear_body
-    color border
+    color bull_border
+    color bear_border
     int offset
     int buffer
     int htf_buffer
@@ -81,7 +82,7 @@ htf3.candles := candles_3
 //+------------------------------------------------------------------------------------------------------------+//
 string group_expansion              = "Just C3  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-tf_limit = '60' 
+tf_limit = '30' 
 
 htf1.settings.show              := input.bool(true, 'HTF 1 (4H)      ', inline = 'htf1', group=group_expansion, display = display.none, 
 tooltip = 'Settings are kept minimal to maintain focus on the preferred HTFs. Watch only the HTF C3 framework.')
@@ -90,21 +91,22 @@ htf1.settings.max_display       := input.int(4, '', minval = 3, maxval = 10, inl
 
 htf2.settings.show              := input.bool(true, 'HTF 2 (7H)      ', inline = 'htf2', group=group_expansion, display = display.none)
 htf2.settings.htf               := '420'
-htf2.settings.max_display       := input.int(4, '', minval = 3, maxval = 10, inline = 'htf2', group=group_expansion, display = display.none)
+htf2.settings.max_display       := input.int(3, '', minval = 3, maxval = 10, inline = 'htf2', group=group_expansion, display = display.none)
 
 htf3.settings.show              := input.bool(true, 'HTF 3 (D)       ', inline = 'htf3', group=group_expansion, display = display.none)
 htf3.settings.htf               := 'D'
-htf3.settings.max_display       := input.int(4, '', minval = 3, maxval = 10, inline = 'htf3', group=group_expansion, display = display.none)
+htf3.settings.max_display       := input.int(3, '', minval = 2, maxval = 10, inline = 'htf3', group=group_expansion, display = display.none)
 
 show_ltf_c2_line = input.bool(true, 'C2 Closure      ', inline = 'c2l', group=group_expansion, display = display.none)
 ltf_c2_line_style = input.string('⎯⎯', title="", options= ['⎯⎯', '------', '······'], inline='c2l', group=group_expansion, display = display.none)
-ltf_c2_line_color = input.color(color.new(#f7525f, 0), title="", inline='c2l', group=group_expansion, display = display.none)
+ltf_c2_line_color = input.color(color.new(#f23645, 0), title="", inline='c2l', group=group_expansion, display = display.none)
 
 enable_alert_c3 = input.bool(true, "Alert C3", inline='c2l', group=group_expansion, display = display.none)
 
 // HTF H/L/EQ Lines
 show_sweep_lines = true 
 sweep_line_color = color.new(#f23645, 0) 
+sweep_line_width = 1
 show_expansion_lines = false 
 expansion_line_color = color.new(#000000, 0) 
 show_eq_line = true 
@@ -120,9 +122,10 @@ session_label = input.string('Long', title="Label", options=['None', 'Short', 'L
 session_label_size = size.small 
 
 string group_style              = "HTF Candle Styling  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-settings.bull_body              := input.color(color.new(#ffffff, 0), 'Coloring', inline = 'coloring', group=group_style, display = display.none)
-settings.bear_body              := input.color(color.new(#000000, 0), '', inline = 'coloring', group=group_style, display = display.none)
-settings.border                 := input.color(color.new(#000000, 0), '', inline = 'coloring', group=group_style, display = display.none)
+settings.bull_body              := input.color(color.new(#ace5dc, 80), 'Coloring', inline = 'coloring', group=group_style, display = display.none)
+settings.bear_body              := input.color(color.new(#174442, 0), '', inline = 'coloring', group=group_style, display = display.none)
+settings.bull_border                 := input.color(color.new(#089981, 0), '', inline = 'coloring', group=group_style, display = display.none)
+settings.bear_border                 := input.color(color.new(#174442, 0), '', inline = 'coloring', group=group_style, display = display.none)
 
 settings.offset                 := input.int(30, 'padding from current candles', minval = 1, group=group_style, display = display.none)
 settings.buffer                 := input.int(1, 'space between candles', minval = 1, maxval = 4, group=group_style, display = display.none)
@@ -130,21 +133,21 @@ settings.htf_buffer             := input.int(10, 'space between Higher Timeframe
 settings.width                  := input.int(1, 'Candle Width', minval = 1, maxval = 4, group=group_style, display = display.none) * 2
 
 settings.htf_label_show         := true
-settings.htf_label_color        := color.new(#000000, 0) 
+settings.htf_label_color        := color.new(#000000, 20) 
 settings.htf_label_size         := size.normal 
 
 settings.label_position         := "Top" 
 settings.label_alignment        := "Follow Candles"
 
-settings.candle_time            := true 
+settings.candle_time            := false 
 settings.dow_color              := color.new(#000000, 10) 
-settings.dow_size               := size.small 
+settings.dow_size               := size.tiny 
 
 
 //---- SMT Settings ----//
 string group_smt_psp = "HTF SMT  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-show_smt = input.bool(true, title="SMT", inline='smt2', group=group_expansion, display = display.none)
+show_smt = input.bool(false, title="SMT", inline='smt2', group=group_expansion, display = display.none)
 smt_high_color = color.new(#808080, 50) //input.color(color.new(#808080, 50), title="High", inline='smt2', group=group_expansion, display = display.none)
 smt_low_color = color.new(#808080, 50) //input.color(color.new(#808080, 50), title="Low", inline='smt2', group=group_expansion, display = display.none)
 smt_line_width_1 = 1 
@@ -443,7 +446,7 @@ method Reorder(CandleSet candleSet, int offset) =>
                                 xloc=xloc.bar_index,
                                 color=ltf_c2_line_color,
                                 style=get_line_style(ltf_c2_line_style),
-                                width=1) 
+                                width=sweep_line_width) 
                         else
                             line.set_x1(candle.ltf_swing_high_line, candle.h_idx)
                             line.set_y1(candle.ltf_swing_high_line, candle.h)
@@ -505,7 +508,7 @@ method Reorder(CandleSet candleSet, int offset) =>
                                 xloc=xloc.bar_index,
                                 color=ltf_c2_line_color,
                                 style=get_line_style(ltf_c2_line_style),
-                                width=1)
+                                width=sweep_line_width)
                         else 
                             line.set_x1(candle.ltf_swing_low_line, candle.l_idx)
                             line.set_y1(candle.ltf_swing_low_line, candle.l)
@@ -560,7 +563,7 @@ method Reorder(CandleSet candleSet, int offset) =>
                 // Line from right edge of this candle to left edge of next candle (toward index 0)
                 int next_buffer = offset + (settings.width + settings.buffer) * (size - (i - 1) - 1)
                 int line_start_x = bar_index + settings.width + t_buffer
-                int line_end_x = bar_index + next_buffer + 1
+                int line_end_x = bar_index + next_buffer + 2
                 
                 if na(candle.eq_line)
                     candle.eq_line := line.new(line_start_x, eq_price, line_end_x, eq_price, color=eq_line_color, width=1, style=get_line_style(eq_line_style))
@@ -585,7 +588,7 @@ method Reorder(CandleSet candleSet, int offset) =>
                     candle.div_low_line := na
 
     // SMT / PSP logic for the visible HTF candle sequence
-    if size >= 2 and barstate.islast
+    if show_smt and size >= 2 and barstate.islast
         current_pair_index = getCurrentPairIndex()
 
         if current_pair_index > 0
@@ -726,7 +729,7 @@ method Reorder(CandleSet candleSet, int offset) =>
 // Alerts for C3
 AlertC3(CandleSet candleSet) => 
     size = candleSet.candles.size()
-    allowAlert = not na(time(timeframe.period, "0200-1000"))
+    allowAlert = not na(time(timeframe.period, "0000-1100"))
     if candleSet.settings.show and enable_alert_c3 and allowAlert and size >= 3
         Candle c1 = array.get(candleSet.candles, 2)
         Candle c2 = array.get(candleSet.candles, 1)
@@ -736,10 +739,10 @@ AlertC3(CandleSet candleSet) =>
 
         string tf_name = HTFName(candleSet.settings.htf)
         if highSweep 
-            alert(tf_name + " - " + c3.dow + " ▼ - Bearish C3" )
+            alert(tf_name + " C3 ▼" )
 
         if lowSweep
-            alert(tf_name + " - " + c3.dow + " ▲ - Bullish C3")
+            alert(tf_name + " C3 ▲")
 
 method Monitor(CandleSet candleSet) =>
     HTFBarTime = time(candleSet.settings.htf, session_timezone)
@@ -764,9 +767,9 @@ method Monitor(CandleSet candleSet) =>
 
         bull = candle.c > candle.o
 
-        candle.body := box.new(bar_index, math.max(candle.o, candle.c), bar_index + 2, math.min(candle.o, candle.c), bull ? settings.border : settings.border, 1, bgcolor = bull ? settings.bull_body : settings.bear_body)
-        candle.wick_up := line.new(bar_index + 1, candle.h, bar_index, math.max(candle.o, candle.c), color = bull ? settings.border : settings.border)
-        candle.wick_down := line.new(bar_index + 1, math.min(candle.o, candle.c), bar_index, candle.l, color = bull ? settings.border : settings.border)
+        candle.body := box.new(bar_index, math.max(candle.o, candle.c), bar_index + 2, math.min(candle.o, candle.c), bull ? settings.bull_border : settings.bear_border, 1, bgcolor = bull ? settings.bull_body : settings.bear_body)
+        candle.wick_up := line.new(bar_index + 1, candle.h, bar_index, math.max(candle.o, candle.c), color = bull ? settings.bull_border : settings.bear_border)
+        candle.wick_down := line.new(bar_index + 1, math.min(candle.o, candle.c), bar_index, candle.l, color = bull ? settings.bull_border : settings.bear_border)
 
         candleSet.candles.unshift(candle)
 
@@ -815,9 +818,9 @@ method Update(CandleSet candleSet, int offset) =>
         box.set_top(candle.body, candle.o)
         box.set_bottom(candle.body, candle.c)
         box.set_bgcolor(candle.body, bull ? settings.bull_body : settings.bear_body)
-        box.set_border_color(candle.body, bull ? settings.border : settings.border)
-        line.set_color(candle.wick_up, bull ? settings.border : settings.border)
-        line.set_color(candle.wick_down, bull ? settings.border : settings.border)
+        box.set_border_color(candle.body, bull ? settings.bull_border : settings.bear_border)
+        line.set_color(candle.wick_up, bull ? settings.bull_border : settings.bear_border)
+        line.set_color(candle.wick_down, bull ? settings.bull_border : settings.bear_border)
         line.set_y1(candle.wick_up, candle.h)
         line.set_y2(candle.wick_up, math.max(candle.o, candle.c))
         line.set_y1(candle.wick_down, candle.l)
@@ -827,51 +830,56 @@ method Update(CandleSet candleSet, int offset) =>
         candleSet.Reorder(offset)
     candleSet
 
-// Draws Session Dividers 
+// Draws Session Dividers
 DrawSessionDividers() =>
-    [range_high_7h, range_low_7h] = request.security(
-        syminfo.tickerid, "420",
-        [math.max(high, math.max(high[1], math.max(high[2], high[3]))), math.min(low, math.min(low[1], math.min(low[2], low[3])))],
-        barmerge.gaps_off, barmerge.lookahead_off
-    )
+    [range_high, range_low] = request.security(syminfo.tickerid,"420",
+         [math.max(high,high[1],high[2],high[3]),math.min(low,low[1],low[2],low[3])],
+         barmerge.gaps_off,barmerge.lookahead_off)
 
-    int htf_time = time("420", session_timezone)
-    bool is_new_7h = ta.change(htf_time) > 0
-    int htf_open_hour = hour(htf_time, session_timezone)
+    int h = hour(time, session_timezone)
+    int m = minute(time, session_timezone)
 
-    // Dynamic anchor for 7H cycle: auto-picks 17 or 18 when observed.
-    var int asia_anchor_hour = 18
-    if is_new_7h and (htf_open_hour == 17 or htf_open_hour == 18)
-        asia_anchor_hour := htf_open_hour
+    bool at_18 = h == 18 and m == 0
+    bool at_02 = h == 2  and m == 0
+    bool at_08 = h == 8  and m == 0
 
-    int london_hour = (asia_anchor_hour + 7) % 24
-    int newyork_hour = (asia_anchor_hour + 14) % 24
+    bool session_open = at_18 or at_02 or at_08
 
-    bool asia_open = is_new_7h and htf_open_hour == asia_anchor_hour
-    bool london_open = is_new_7h and htf_open_hour == london_hour
-    bool newyork_open = is_new_7h and htf_open_hour == newyork_hour
+    string session_long_name =
+         at_18 ? "Asia" :
+         at_02 ? "London" :
+         at_08 ? "New York" : ""
 
-    bool session_open = asia_open or london_open or newyork_open
-    string session_long_name = asia_open ? "Asia" : london_open ? "London" : "New York"
-    string session_short_name = asia_open ? "A" : london_open ? "L" : "N"
-    string session_name = session_label == 'Short' ? session_short_name : session_label == 'Long' ? session_long_name : ''
-    if session_open and not na(range_high_7h) and not na(range_low_7h)
-        line session_line = line.new(bar_index, range_high_7h, bar_index, range_low_7h, xloc=xloc.bar_index, extend=extend.none, color=session_line_color, width=1, style=get_line_style(session_line_style))
-        label session_label = label.new(bar_index, range_high_7h, session_name, xloc=xloc.bar_index, style=label.style_label_down, color=color_transparent, textcolor=color.new(#000000, 40), size=session_label_size, text_font_family=font.family_monospace)
+    string session_short_name =
+         at_18 ? "A" :
+         at_02 ? "L" :
+         at_08 ? "N" : ""
+
+    string session_name =
+         session_label == "Short" ? session_short_name :
+         session_label == "Long"  ? session_long_name : ""
+
+    if session_open and not na(range_high) and not na(range_low)
+        line session_line = line.new(bar_index, range_high, bar_index, range_low, xloc=xloc.bar_index, extend=extend.none, color=session_line_color, width=1, style=get_line_style(session_line_style))
+        label session_labl = label.new(bar_index, range_high, session_name, xloc=xloc.bar_index, style=label.style_label_down, color=color_transparent, textcolor=color.new(#000000, 40), size=session_label_size, text_font_family=font.family_monospace)
+
         array.push(session_vertical_lines, session_line)
-        array.push(session_vertical_labels, session_label)
-
+        array.push(session_vertical_labels, session_labl)
+    // UPDATE ALL EXISTING DIVIDERS
+    if not na(range_high) and not na(range_low)
+        int size = array.size(session_vertical_lines)
+        if size > 0
+            for i = 0 to size - 1
+                line session_line = array.get(session_vertical_lines, i)
+                label session_labl = array.get(session_vertical_labels, i)
+                line.set_y1(session_line, range_high)
+                line.set_y2(session_line, range_low)
+                label.set_y(session_labl, range_high)
+    // KEEP LAST 3
     while array.size(session_vertical_lines) > 3
         line.delete(array.shift(session_vertical_lines))
         label.delete(array.shift(session_vertical_labels))
 
-    if array.size(session_vertical_lines) > 0
-        for i = 0 to array.size(session_vertical_lines) - 1
-            line session_line = array.get(session_vertical_lines, i)
-            label session_label = array.get(session_vertical_labels, i)
-            line.set_y1(session_line, range_high_7h)
-            line.set_y2(session_line, range_low_7h)
-            label.set_y(session_label, range_high_7h)
 
 // Draws HTF Info Table
 HTFInfoTable(CandleSet htf1, CandleSet htf2, CandleSet htf3) =>
@@ -911,35 +919,37 @@ HTFInfoTable(CandleSet htf1, CandleSet htf2, CandleSet htf3) =>
             table.cell(htf_info_table, 0, row, "", bgcolor=header_bg, text_color=header_text, text_size=table_size)
             for col = 0 to array.size(active_htfs) - 1
                 CandleSet htf = array.get(active_htfs, col)
-                string tf_name = HTFName(htf.settings.htf)
-                table.cell(htf_info_table, col + 1, row, tf_name, bgcolor=header_bg, text_color=header_text, text_size=table_size, text_font_family=font.family_monospace)
+                if htf.candles.size() >= 3
+                    string tf_name = HTFName(htf.settings.htf)
+                    table.cell(htf_info_table, col + 1, row, tf_name, bgcolor=header_bg, text_color=header_text, text_size=table_size, text_font_family=font.family_monospace)
             row += 1
         
-        // Body row - C2 Closures
-        if show_c3_row 
+        // Body row - C3
+        if show_c3_row
             table.cell(htf_info_table, 0, row, "C3", bgcolor=label_bg, text_color=label_text, text_size=table_size, text_font_family=font.family_monospace)
             for col = 0 to array.size(active_htfs) - 1
                 CandleSet htf = array.get(active_htfs, col)
-                string cell_text = na
-                color cell_bg = data_bg
-                Candle c1 = htf.candles.get(2)
-                Candle c2 = htf.candles.get(1)
-                Candle c3 = htf.candles.get(0)
+                if htf.candles.size() >= 3
+                    string cell_text = na
+                    color cell_bg = data_bg
+                    Candle c1 = htf.candles.get(2)
+                    Candle c2 = htf.candles.get(1)
+                    Candle c3 = htf.candles.get(0)
 
-                bool confirmed_c2_high = c2.h > c1.h and c2.c <= c1.h
-                bool confirmed_c2_low  = c2.l < c1.l and c2.c >= c1.l
-                // Build text with triangles
-                if confirmed_c2_high and confirmed_c2_low
-                    cell_text := cell_text + c3.dow + " ▼▲ "
-                    cell_bg := both_c3_color
-                else if confirmed_c2_high
-                    cell_text := cell_text + c3.dow + " ▼ "
-                    cell_bg := bear_c3_color
-                else if confirmed_c2_low
-                    cell_text := cell_text + c3.dow + " ▲ "
-                    cell_bg := bull_c3_color
-                        
-                table.cell(htf_info_table, col + 1, row, not na(cell_text) ? cell_text : " - ", bgcolor=cell_bg, text_color=data_text, text_size=table_size, text_font_family=font.family_monospace)
+                    bool confirmed_c2_high = c2.h > c1.h and c2.c <= c1.h
+                    bool confirmed_c2_low  = c2.l < c1.l and c2.c >= c1.l
+                    // Build text with triangles
+                    if confirmed_c2_high and confirmed_c2_low
+                        cell_text := cell_text + c3.dow + " ▼▲ "
+                        cell_bg := both_c3_color
+                    else if confirmed_c2_high
+                        cell_text := cell_text + c3.dow + " ▼ "
+                        cell_bg := bear_c3_color
+                    else if confirmed_c2_low
+                        cell_text := cell_text + c3.dow + " ▲ "
+                        cell_bg := bull_c3_color
+                            
+                    table.cell(htf_info_table, col + 1, row, not na(cell_text) ? cell_text : " - ", bgcolor=cell_bg, text_color=data_text, text_size=table_size, text_font_family=font.family_monospace)
             row += 1
 //----------------------------- Main Calls --------------------------------- //
 // Cleanup draw objects on last bar to prevent memory leaks
