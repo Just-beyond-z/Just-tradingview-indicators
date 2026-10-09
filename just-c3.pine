@@ -87,11 +87,11 @@ tf_limit = '30'
 htf1.settings.show              := input.bool(true, 'HTF 1 (4H)      ', inline = 'htf1', group=group_expansion, display = display.none, 
 tooltip = 'Settings are kept minimal to maintain focus on the preferred HTFs. Watch only the HTF C3 framework.')
 htf1.settings.htf               := '240'
-htf1.settings.max_display       := input.int(4, '', minval = 3, maxval = 10, inline = 'htf1', group=group_expansion, display = display.none)
+htf1.settings.max_display       := input.int(5, '', minval = 3, maxval = 10, inline = 'htf1', group=group_expansion, display = display.none)
 
 htf2.settings.show              := input.bool(true, 'HTF 2 (7H)      ', inline = 'htf2', group=group_expansion, display = display.none)
 htf2.settings.htf               := '420'
-htf2.settings.max_display       := input.int(3, '', minval = 3, maxval = 10, inline = 'htf2', group=group_expansion, display = display.none)
+htf2.settings.max_display       := input.int(4, '', minval = 3, maxval = 10, inline = 'htf2', group=group_expansion, display = display.none)
 
 htf3.settings.show              := input.bool(true, 'HTF 3 (D)       ', inline = 'htf3', group=group_expansion, display = display.none)
 htf3.settings.htf               := 'D'
