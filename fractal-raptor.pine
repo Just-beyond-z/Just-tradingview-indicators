@@ -278,7 +278,7 @@ string group_imbalance          = "Imbalance  ━━━━━━━━━━━�
 
 // General Settings
 alerts_enabled_input            = input.bool(true, 'Alerts?', group=group_general, tooltip='To turn on the alerts, follow these steps:\n\n1) Make sure that the Alerts? toggle is ON.\n2) Right-click on the indicator on your chart.\n3) Click Add Alert on this indicator.\n4) Choose the Alert Name and confirm by clicking Create.\n\nNOTE: if you change any Settings, delete and re-create the alerts!')
-settings.alerts_enabled         := alerts_enabled_input and not na(time(timeframe.period, "0200-1100"))
+settings.alerts_enabled         := alerts_enabled_input and not na(time(timeframe.period, "0200-1000"))
 settings.sweep_history          := input.int(0, 'History        ', minval=0, group=group_general, inline='history')
 settings.sweep_visible_only     := input.bool(false, '', tooltip='Number of historical setups to show:\n\n☑ ON: Setups on visible HTF candles always shown. This count adds older setups that scrolled away.\n\n☐ OFF: Only show this many setups total.', inline='history', group=group_general)
 settings.fractal_mode           := input.string('Custom','Fractal', options=['Automatic', 'Quarterly', 'Custom', '1s-1m', '15s-5m', '1m-15m', '3m-30m', '5m-1H', '15m-4H', '1H-1D', '4H-1W', '1D-1M'], group=group_general, tooltip='Automatic: Standard multi-timeframe alignment.\nQuarterly: Based on ICT Quarterly Theory cycles (1m→22m, 3m/5m→90m, 15m/30m→6H).')
@@ -549,19 +549,19 @@ hide_candles_input             = input.bool(true, 'Hide Projection?', group = gr
 settings.hide_candles          := hide_candles_input
 hide_setups_input              = input.bool(false, 'Hide Setups?', group = group_htf, inline='offset', tooltip='Hide all setups (sweeps, CISD, projections, liquidity). Only show HTF candles, vertical lines, and H/L lines.')
 settings.hide_setups           := hide_setups_input
-htf.settings.max_display       := input.int(4, 'HTF Candles      ', minval=4, group = group_htf,inline='HTF Candles',active = not hide_candles_input)
+htf.settings.max_display       := input.int(4, 'HTF Candles      ', minval=2, group = group_htf,inline='HTF Candles',active = not hide_candles_input)
 candle_size_input              = input.string('Small', 'Size', options=['Small', 'Normal', 'Big'],group = group_htf,inline='HTF Candles',active = not hide_candles_input)
 settings.width                 := candle_size_input == 'Small' ? 2 : candle_size_input == 'Normal' ? 4 : 6
 settings.offset                := input.int(10, 'Offset           ', minval = 1, group = group_htf,inline='Offset',active = not hide_candles_input)
-settings.bull_body             := input.color(color.new(#ffffff,0), 'Body            ', inline = 'body', group = group_htf,active = not hide_candles_input)
-settings.bear_body             := input.color(color.rgb(0, 0, 0), '', inline = 'body', group = group_htf,active = not hide_candles_input)
-settings.bull_border           := input.color(color.rgb(0, 0, 0), 'Border           ', inline = 'border', group = group_htf,active = not hide_candles_input)
-settings.bear_border           := input.color(color.rgb(0, 0, 0), '', inline = 'border', group = group_htf,active = not hide_candles_input)
-settings.bull_wick             := input.color(color.rgb(0, 0, 0), 'Wick             ', inline = 'wick', group = group_htf,active = not hide_candles_input)
-settings.bear_wick             := input.color(color.rgb(0, 0, 0), '', inline = 'wick', group = group_htf,active = not hide_candles_input)
+settings.bull_body             := input.color(color.new(#ace5dc,80), 'Body            ', inline = 'body', group = group_htf,active = not hide_candles_input)
+settings.bear_body             := input.color(#174442, '', inline = 'body', group = group_htf,active = not hide_candles_input)
+settings.bull_border           := input.color(#089981, 'Border           ', inline = 'border', group = group_htf,active = not hide_candles_input)
+settings.bear_border           := input.color(#174442, '', inline = 'border', group = group_htf,active = not hide_candles_input)
+settings.bull_wick             := input.color(#089981, 'Wick             ', inline = 'wick', group = group_htf,active = not hide_candles_input)
+settings.bear_wick             := input.color(#174442, '', inline = 'wick', group = group_htf,active = not hide_candles_input)
 trace_show_input               = input.bool(false, 'HTF Open    ', inline = 'trace', group = group_htf,active = not hide_candles_input)
 settings.trace_show            := trace_show_input
-settings.trace_o_color         := input.color(color.rgb(0, 0, 0,50), '', inline = 'trace', group = group_htf, active = trace_show_input and not hide_candles_input)
+settings.trace_o_color         := input.color(color.rgb(0, 0, 0,70), '', inline = 'trace', group = group_htf, active = trace_show_input and not hide_candles_input)
 settings.trace_o_style         := input.string('Solid', '', options = ['Solid', 'Dashed', 'Dotted'], inline = 'trace', group = group_htf, active = trace_show_input and not hide_candles_input)
 settings.trace_o_size          := input.int(1, 'Width', options = [1, 2, 3, 4], inline = 'trace', group = group_htf, active = trace_show_input and not hide_candles_input)
 vt_show_input                  = input.bool(false, 'Vertical Lines ', inline = 'vt', group = group_htf)
@@ -579,16 +579,16 @@ prev_eq_show                   = input.bool(true, 'Previous EQ   ', inline
 prev_eq_color                  = input.color(color.rgb(0,0,0,0), '', inline='prev_eq', group = group_htf, active = prev_eq_show)
 prev_eq_style                  = input.string('Dotted', '', options=['Solid','Dashed','Dotted'], inline='prev_eq', group = group_htf, active = prev_eq_show)
 prev_eq_width                  = input.int(1, 'Width', options=[1,2,3,4], inline='prev_eq', group = group_htf, active = prev_eq_show)
-drawings_type                  = input.string('Both', 'Drawings Type', options=['Both', 'On Chart', 'HTF candle'], group = group_htf, tooltip='On Chart: EQ lines on price chart (setup package).\nHTF candle: EQ on HTF projection (later).\nBoth: chart + projection.', active = prev_eq_show)
+drawings_type                  = input.string('HTF candle', 'Drawings Type', options=['Both', 'On Chart', 'HTF candle'], group = group_htf, tooltip='On Chart: EQ lines on price chart (setup package).\nHTF candle: EQ on HTF projection (later).\nBoth: chart + projection.', active = prev_eq_show)
 
 sweep_show_input                = input.bool(true, 'Show Sweeps   ', group=group_sweep, inline='sweep')
 settings.sweep_show             := sweep_show_input
 settings.sweep_live             := input.bool(true, 'Show live setup', inline='sweep_live', group=group_sweep, active = sweep_show_input)
 settings.live_alerts_enabled    := input.bool(true, 'Alert', inline='sweep_live', group=group_sweep, active = sweep_show_input and alerts_enabled_input, tooltip='Send "Potential" alerts when CISD triggers during live setup tracking')
-settings.sweep_color            := input.color(color.rgb(0, 0, 0, 0), 'Color         ', inline='sweep_color', group=group_sweep, active = sweep_show_input)
+settings.sweep_color            := input.color(color.new(#f23645,50), 'Color         ', inline='sweep_color', group=group_sweep, active = sweep_show_input)
 settings.sweep_style            := input.string('Solid', '', options=['Solid', 'Dashed', 'Dotted'], inline='sweep_color', group=group_sweep, active = sweep_show_input)
 settings.sweep_size             := input.int(1, '', options=[1, 2, 3, 4], inline='sweep_color', group=group_sweep, active = sweep_show_input)
-settings.c2_color               := input.color(color.rgb(0, 0, 0), 'Label      ', inline='c2', group=group_sweep)
+settings.c2_color               := input.color(color.rgb(0, 0, 0, 50), 'Label      ', inline='c2', group=group_sweep)
 settings.c2_size                := input.string(size.small, '', options=[size.tiny, size.small, size.normal, size.large], inline='c2', group=group_sweep)
 settings.show_c2_lbl            := input.bool(true, 'C2', inline='c2', group=group_sweep)
 settings.show_c3_lbl            := input.bool(true, 'C3', inline='c2', group=group_sweep)
@@ -598,11 +598,11 @@ settings.cisd_show              := cisd_show_input
 ic_cisd_show_input              = input.bool(true, 'IC-CISD', inline='cisd', group=group_sweep, tooltip='Same-side IC-CISD after main CISD confirm through C4 (stops on setup or C4 invalid). Uses CISD colors/width/style. Extreme marked with a dot.')
 settings.ic_cisd_show           := ic_cisd_show_input
 settings.ic_dot_size            := input.string(size.tiny, 'Dot', options=[size.tiny, size.small, size.normal, size.large], inline='cisd', group=group_sweep, active = ic_cisd_show_input)
-settings.cisd_bull_color        := input.color(color.new(#5b9cf6, 0), 'Bull          ', inline='cisd_color', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
-settings.cisd_bear_color        := input.color(color.new(#f77c80, 0), 'Bear', inline='cisd_color', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
+settings.cisd_bull_color        := input.color(color.new(#ffb74d, 0), 'Bull          ', inline='cisd_color', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
+settings.cisd_bear_color        := input.color(color.new(#ffb74d, 0), 'Bear', inline='cisd_color', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
 settings.cisd_width             := input.int(2, 'Width', options=[1, 2, 3, 4], inline='cisd_style', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
 settings.cisd_style             := input.string('Solid', 'Style', options=['Solid', 'Dashed', 'Dotted'], inline='cisd_style', group=group_sweep, active = cisd_show_input or ic_cisd_show_input)
-entry_zone_show_input           = input.bool(true, 'Entry Zone   ', inline='entry_zone', group=group_sweep)
+entry_zone_show_input           = input.bool(false, 'Entry Zone   ', inline='entry_zone', group=group_sweep)
 settings.entry_zone_show        := entry_zone_show_input
 settings.entry_zone_bull_color  := input.color(color.new(#81c784, 85), 'Bullish', inline='entry_zone', group=group_sweep, active = entry_zone_show_input)
 settings.entry_zone_bear_color  := input.color(color.new(#636363, 85), 'Bearish', inline='entry_zone', group=group_sweep, active = entry_zone_show_input)
@@ -642,7 +642,7 @@ smt_show_input                  = input.bool(true, 'SMT', inline='smt_top', grou
 smt_label_show_input            = input.bool(true, 'Label', inline='smt_top', group=group_smt, active = smt_show_input)
 smt_label_size_input            = input.string('Small', '', options=['Tiny', 'Small', 'Normal', 'Large'], inline='smt_top', group=group_smt, active = smt_show_input and smt_label_show_input)
 smt_alerts_input                = input.bool(false, 'Alerts', inline='smt_top', group=group_smt, active = smt_show_input)
-smt_color_input                 = input.color(color.new(#ffb74d, 0), '', inline='smt_line', group=group_smt, active = smt_show_input)
+smt_color_input                 = input.color(color.new(#9c9c9c, 0), '', inline='smt_line', group=group_smt, active = smt_show_input)
 smt_line_style_input            = input.string('Solid', '', options=['Solid', 'Dashed', 'Dotted'], inline='smt_line', group=group_smt, active = smt_show_input)
 smt_line_width_input            = input.int(1, 'Width', options=[1, 2, 3, 4], inline='smt_line', group=group_smt, active = smt_show_input)
 smt_mode_input                  = input.string('Automatic', 'SMT Mode', options=['Automatic', 'Manual'], inline='smt_mode', group=group_smt, active = smt_show_input)
@@ -677,18 +677,18 @@ smt_sym2_ticker = smt_sym2_resolved != "" ? syminfo.ticker(smt_sym2_resolved) : 
 
 htf_label_show_input            = input.bool(true, 'HTF Label     ', group=group_label, inline = 'HTFlabel')
 settings.htf_label_show         := htf_label_show_input
-settings.htf_label_color        := input.color(color.rgb(0, 0, 0), '', group=group_label, inline = 'HTFlabel', active = htf_label_show_input)
+settings.htf_label_color        := input.color(color.rgb(0, 0, 0, 40), '', group=group_label, inline = 'HTFlabel', active = htf_label_show_input)
 settings.htf_label_size         := input.string(size.normal, '', [size.tiny, size.small, size.normal, size.large, size.huge], group=group_label, inline = 'HTFlabel', active = htf_label_show_input)
 settings.label_position         := input.string("Top", 'Pos', options=['Both', 'Top', 'Bottom'], group=group_label, inline = 'HTFlabel', active = htf_label_show_input)
 
 htf_timer_show_input            = input.bool(false, 'Remaining Time', inline = 'timer', group=group_label,active = htf_label_show_input)
 settings.htf_timer_show         := htf_timer_show_input
-settings.htf_timer_color        := input.color(color.rgb(0, 0, 0), '', inline = 'timer', group=group_label, active = htf_timer_show_input and htf_label_show_input)
+settings.htf_timer_color        := input.color(color.rgb(0, 0, 0, 40), '', inline = 'timer', group=group_label, active = htf_timer_show_input and htf_label_show_input)
 settings.htf_timer_size         := input.string(size.normal, '', [size.tiny, size.small, size.normal, size.large, size.huge], group=group_label, inline = 'timer', active = htf_timer_show_input and htf_label_show_input)
 
 daily_name_input                = input.bool(false, 'Interval Value', group=group_label, inline = 'dow')
 settings.daily_name             := daily_name_input
-settings.dow_color              := input.color(color.rgb(0, 0, 0), '', group=group_label, inline = 'dow', active = daily_name_input)
+settings.dow_color              := input.color(color.rgb(0, 0, 0, 40), '', group=group_label, inline = 'dow', active = daily_name_input)
 settings.dow_size               := input.string(size.small, '', [size.tiny, size.small, size.normal, size.large, size.huge], group=group_label, inline = 'dow', active = daily_name_input)
 settings.dow_position           := input.string('Bottom', 'Pos', options=['Both', 'Top', 'Bottom'], group=group_label, inline = 'dow', active = daily_name_input)
 
