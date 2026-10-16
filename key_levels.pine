@@ -128,8 +128,8 @@ HTF_2_FVG_Settings.max_count := input.int(2, '', inline = 'htf2', group = fvgSet
 
 HTF_3_FVG_Settings.show := input.bool(true, '', inline = 'htf3', group = fvgSettings)
 HTF_3_FVG_Settings.htf := input.timeframe('240', '', inline = 'htf3', group = fvgSettings)
-HTF_3_FVG_Settings.color_bull := input.color(#ffe0b2, '', inline = 'htf3', group = fvgSettings)
-HTF_3_FVG_Settings.color_bear := input.color(#ffe0b2, '', inline = 'htf3', group = fvgSettings)
+HTF_3_FVG_Settings.color_bull := input.color(#bbd9fb, '', inline = 'htf3', group = fvgSettings)
+HTF_3_FVG_Settings.color_bear := input.color(#bbd9fb, '', inline = 'htf3', group = fvgSettings)
 HTF_3_FVG_Settings.max_count := input.int(3, '', inline = 'htf3', group = fvgSettings)
 
 HTF_4_FVG_Settings.show := input.bool(true, '', inline = 'htf4', group = fvgSettings)
@@ -194,13 +194,13 @@ na_color = input.color(#4a4a4a, "", inline = "NY1", group = g_KEY_LEVELS)
 
 var g_DWM_GEN = "Previous High & Low"
 dhl = input.bool(true, "Day", inline = "D1", group = g_DWM_GEN)
-d_color = input.color(#5b9cf6, "", inline = "D1", group = g_DWM_GEN)
+d_color = input.color(#90bff9, "", inline = "D1", group = g_DWM_GEN)
 
 whl = input.bool(false, "Week", inline = "D1", group = g_DWM_GEN)
-w_color = input.color(#5b9cf6, "", inline = "D1", group = g_DWM_GEN)
+w_color = input.color(#90bff9, "", inline = "D1", group = g_DWM_GEN)
 
 mhl = input.bool(false, "Month", inline = "D1", group = g_DWM_GEN)
-m_color = input.color(#5b9cf6, "", inline = "D1", group = g_DWM_GEN)
+m_color = input.color(#90bff9, "", inline = "D1", group = g_DWM_GEN)
 
 max_prev_level = 1
 
@@ -234,20 +234,7 @@ h3_color = input.color(oprice_color, "", inline = "H3", group = g_OPEN)
 alertSettings = "Alert Settings"
 
 enableAlerts      = input.bool(true, "Enable Alerts", group=alertSettings)
-// alertSwingsBreak  = input.bool(true, "Alert Swings Break", group=alertSettings)
 alertKeyLevelBreak = input.bool(true, "Alert Key Levels Break", group=alertSettings)
-
-// alertAsia       = input.bool(false, "", group=alertSettings, inline="asia")
-// asiaSession     = input.session("1900-0000", "Asia", group=alertSettings, inline="asia")
-
-// alertLondon     = input.bool(true, "", group=alertSettings, inline="london")
-// londonSession   = input.session("0200-0500", "London", group=alertSettings, inline="london")
-
-// alertNewYork    = input.bool(true, "", group=alertSettings, inline="newyork")
-// newYorkSession  = input.session("0830-1100", "New York", group=alertSettings, inline="newyork")
-
-var line[] session_vertical_lines = array.new_line()
-var label[] session_vertical_labels = array.new_label()
 
 // ── FVG Variables ─────────────────────────────────────────
 color color_transparent = #ffffff00
@@ -930,6 +917,7 @@ type hz
 type dwm_hl
     array<line> hi_line
     array<line> lo_line
+    array<line> eq_line
     array<label> hi_label
     array<label> lo_label
     array<bool> hit_high
@@ -1001,9 +989,9 @@ initKZ() =>
 
 var array<kz_helper> key_zones = initKZ()
 
-var d_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
-var w_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
-var m_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
+var d_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
+var w_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
+var m_hl = dwm_hl.new(array.new_line(), array.new_line(), array.new_line(), array.new_label(), array.new_label(), array.new_bool(), array.new_bool(), array.new_int(), array.new_int())
 
 var d_info = dwm_info.new("D")
 var w_info = dwm_info.new("W")
@@ -1052,10 +1040,14 @@ dwm_hl(string tf, bool use, dwm_hl hl, dwm_info n, color col) =>
 
         // Create new previous-period levels
         if timeframe.change(tf)
+            float eq_level = (n.ph + n.pl) / 2
+
             hl.hi_line.unshift(line.new(n.ph_time, n.ph, time, n.ph, xloc = xloc.bar_time, style = line.style_solid, width = 1, color = col))
             hl.lo_line.unshift(line.new(n.pl_time, n.pl, time, n.pl, xloc = xloc.bar_time, style = line.style_solid, width = 1, color = col))
-            hl.hi_label.unshift(label.new(time, n.ph, "", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
-            hl.lo_label.unshift(label.new(time, n.pl, "", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = col, size = lbl_size))
+            hl.eq_line.unshift(line.new(prev_period_time, eq_level, time, eq_level, xloc = xloc.bar_time, style = line.style_dashed, width = 1, color = col))
+
+            hl.hi_label.unshift(label.new(time, n.ph, "", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = fvg_label_color, size = lbl_size))
+            hl.lo_label.unshift(label.new(time, n.pl, "", xloc = xloc.bar_time, style = label.style_label_left, color = color_transparent, textcolor = fvg_label_color, size = lbl_size))
 
             // Add hit state for the new level
             hl.hit_high.unshift(false)
@@ -1063,9 +1055,10 @@ dwm_hl(string tf, bool use, dwm_hl hl, dwm_info n, color col) =>
             hl.hit_high_time.unshift(na)
             hl.hit_low_time.unshift(na)
 
-            if hl.hi_line.size() >  max_prev_level
+            if hl.hi_line.size() > max_prev_level
                 hl.hi_line.pop().delete()
                 hl.lo_line.pop().delete()
+                hl.eq_line.pop().delete()
                 hl.hi_label.pop().delete()
                 hl.lo_label.pop().delete()
 
@@ -1080,8 +1073,10 @@ dwm_hl(string tf, bool use, dwm_hl hl, dwm_info n, color col) =>
 
                 float hi_level = hl.hi_line.get(i).get_y1()
                 float lo_level = hl.lo_line.get(i).get_y1()
+                float eq_level = (hi_level + lo_level) / 2
+
                 bool already_hit_high = hl.hit_high.get(i)
-                bool already_hit_low  = hl.hit_low.get(i)
+                bool already_hit_low = hl.hit_low.get(i)
 
                 // Check if THIS specific high was touched
                 if not already_hit_high and high >= hi_level
@@ -1097,17 +1092,22 @@ dwm_hl(string tf, bool use, dwm_hl hl, dwm_info n, color col) =>
                     hl.hit_low_time.set(i, time)
 
                     if enableAlerts and alertKeyLevelBreak
-                        alert("Hit Previous" + tf + str.tostring(i + 1) + " Low")
+                        alert("Hit Previous " + tf + str.tostring(i + 1) + " Low")
 
                 int label_left_offset = timeframe.in_seconds() * 1000 * 4
+
                 bool high_hit = hl.hit_high.get(i)
-                int hi_x2 = future_time //high_hit ? hl.hit_high_time.get(i) : future_time
+                int hi_x2 = future_time
                 hl.hi_line.get(i).set_x2(hi_x2)
+
                 bool low_hit = hl.hit_low.get(i)
-                int lo_x2 = future_time //low_hit ? hl.hit_low_time.get(i) : future_time
+                int lo_x2 = future_time
                 hl.lo_line.get(i).set_x2(lo_x2)
-                int hi_label_x = hi_x2 //high_hit ? hi_x2 - label_left_offset : hi_x2
-                int lo_label_x = lo_x2 //low_hit ? lo_x2 - label_left_offset : lo_x2
+
+                hl.eq_line.get(i).set_x2(future_time)
+
+                int hi_label_x = hi_x2
+                int lo_label_x = lo_x2
 
                 string period_name = "P" + tf + str.tostring(i + 1)
 
@@ -1119,15 +1119,10 @@ dwm_hl(string tf, bool use, dwm_hl hl, dwm_info n, color col) =>
                 hl.lo_label.get(i).set_y(lo_level)
 
                 if high_hit
-                    // hl.hi_line.get(i).set_color(color.new(col, 60))
                     hl.hi_line.get(i).set_style(line.style_solid)
-                    // hl.hi_label.get(i).set_style(label.style_label_down)
-                    // hl.hi_label.get(i).set_textcolor(color.new(#000000, 0))
+
                 if low_hit
-                    // hl.lo_line.get(i).set_color(color.new(col, 60))
                     hl.lo_line.get(i).set_style(line.style_solid)
-                    // hl.lo_label.get(i).set_style(label.style_label_up)
-                    // hl.lo_label.get(i).set_textcolor(color.new(#000000, 0))
 dwm() =>
     if tf_limit_is_equal_or_more_chart_tf
         dwm_hl("D", dhl, d_hl, d_info, d_color)
@@ -1284,126 +1279,3 @@ if showPrevLevels
     dwm()
 if showOpenLines
     hz_lines()
-
-// Draws Session Dividers
-DrawSessionDividers() =>
-    [range_high, range_low] = request.security(syminfo.tickerid,"420",
-         [math.max(high,high[1],high[2],high[3]),math.min(low,low[1],low[2],low[3])],
-         barmerge.gaps_off,barmerge.lookahead_off)
-
-    int h = hour(time, session_timezone)
-    int m = minute(time, session_timezone)
-
-    bool at_18 = h == 18 and m == 0
-    bool at_02 = h == 2  and m == 0
-    bool at_08 = h == 8  and m == 0
-
-    bool session_open = at_18 or at_02 or at_08
-
-    string session_long_name =
-         at_18 ? "Asia" :
-         at_02 ? "London" :
-         at_08 ? "New York" : ""
-
-    string session_short_name =
-         at_18 ? "A" :
-         at_02 ? "L" :
-         at_08 ? "N" : ""
-
-    string session_name =
-         session_label == "Short" ? session_short_name :
-         session_label == "Long"  ? session_long_name : ""
-
-    if session_open and not na(range_high) and not na(range_low)
-        line session_line = line.new(bar_index, range_high, bar_index, range_low, xloc=xloc.bar_index, extend=extend.none, color=session_line_color, width=1, style=line.style_dotted)
-        label session_labl = label.new(bar_index, range_high, session_name, xloc=xloc.bar_index, style=label.style_label_down, color=color_transparent, textcolor=color.new(#000000, 40), size=session_label_size, text_font_family=font.family_monospace)
-
-        array.push(session_vertical_lines, session_line)
-        array.push(session_vertical_labels, session_labl)
-    // UPDATE ALL EXISTING DIVIDERS
-    if not na(range_high) and not na(range_low)
-        int size = array.size(session_vertical_lines)
-        if size > 0
-            for i = 0 to size - 1
-                line session_line = array.get(session_vertical_lines, i)
-                label session_labl = array.get(session_vertical_labels, i)
-                line.set_y1(session_line, range_high)
-                line.set_y2(session_line, range_low)
-                label.set_y(session_labl, range_high)
-    // KEEP LAST 3
-    while array.size(session_vertical_lines) > 3
-        line.delete(array.shift(session_vertical_lines))
-        label.delete(array.shift(session_vertical_labels))
-
-// Draw Session Dividers (if enabled)
-if show_session_divider and tf_limit_is_equal_or_more_chart_tf
-    DrawSessionDividers()
-
-// // ── Swing Alerts ─────────────────────────
-
-// // combine all TF touches
-// touchedHighThisBar := tHighHTF1 or tHighHTF2 or tHighHTF3 or tHighHTF4
-// touchedLowThisBar  := tLowHTF1  or tLowHTF2 or tLowHTF3 or tLowHTF4
-
-// anyTouch = touchedHighThisBar or touchedLowThisBar
-// bothTouch = touchedHighThisBar and touchedLowThisBar
-
-// // ── Dynamic Alert Message ─────────────────────────
-// string highTFs = ""
-// string lowTFs  = ""
-
-// // Highs
-// if tHighHTF1
-//     highTFs += format_timeframe_label(HTF_1_Swing_Settings.htf) + ", "
-
-// if tHighHTF2
-//     highTFs += format_timeframe_label(HTF_2_Swing_Settings.htf) + ", "
-
-// if tHighHTF3
-//     highTFs += format_timeframe_label(HTF_3_Swing_Settings.htf) + ", "
-
-// if tHighHTF4
-//     highTFs += format_timeframe_label(HTF_4_Swing_Settings.htf) + ", "
-// // Lows
-// if tLowHTF1
-//     lowTFs += format_timeframe_label(HTF_1_Swing_Settings.htf) + ", "
-
-// if tLowHTF2
-//     lowTFs += format_timeframe_label(HTF_2_Swing_Settings.htf) + ", "
-
-// if tLowHTF3
-//     lowTFs += format_timeframe_label(HTF_3_Swing_Settings.htf) + ", "
-
-// if tLowHTF4
-//     lowTFs += format_timeframe_label(HTF_4_Swing_Settings.htf) + ", "
-
-// // Build final message
-// string touchedMsg = ""
-
-// // High message
-// if alertSwingsBreak and str.length(highTFs) > 2
-//     highTFs := str.substring(highTFs, 0, str.length(highTFs) - 2)
-//     touchedMsg += highTFs + " Swing High Broken"
-
-// // Low message
-// if alertSwingsBreak and str.length(lowTFs) > 2
-//     lowTFs := str.substring(lowTFs, 0, str.length(lowTFs) - 2)
-
-//     if touchedMsg != ""
-//         touchedMsg += " | "
-
-//     touchedMsg += lowTFs + " Swing Low Broken"
-
-// // Trading Session
-// inAsiaSession     = not na(time(timeframe.period, asiaSession))
-// inLondonSession   = not na(time(timeframe.period, londonSession))
-// inNewYorkSession  = not na(time(timeframe.period, newYorkSession))
-
-// allowAlert =
-//      (alertAsia and inAsiaSession) or
-//      (alertLondon and inLondonSession) or
-//      (alertNewYork and inNewYorkSession)
-
-// // Fire alert
-// if enableAlerts and allowAlert and touchedMsg != ""
-//     alert(touchedMsg, alert.freq_once_per_bar)
